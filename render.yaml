@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: dccb-ams
+    runtime: node
+    plan: free
+    buildCommand: npm run build:render
+    startCommand: npm run start:render
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRE
+        value: 30d
+      - key: FILE_UPLOAD_PATH
+        value: /tmp/ams-uploads

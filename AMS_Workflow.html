@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AMS — Audit Management System | Interactive Workflow</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root {
+    --bg: #050d1a;
+    --bg-card: #0a1628;
+    --blue: #3b82f6;
+    --blue-glow: rgba(59,130,246,0.4);
+    --green: #10b981;
+    --green-glow: rgba(16,185,129,0.4);
+    --amber: #f59e0b;
+    --amber-glow: rgba(245,158,11,0.4);
+    --purple: #8b5cf6;
+    --purple-glow: rgba(139,92,246,0.4);
+    --red: #ef4444;
+    --red-glow: rgba(239,68,68,0.4);
+    --cyan: #06b6d4;
+    --cyan-glow: rgba(6,182,212,0.4);
+    --rose: #e11d48;
+    --rose-glow: rgba(225,29,72,0.4);
+    --gold: #fbbf24;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: #e2e8f0;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* ===== STAR BACKGROUND ===== */
+  .stars {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none; z-index: 0;
+  }
+  .star {
+    position: absolute; background: white; border-radius: 50%;
+    animation: twinkle var(--dur) ease-in-out infinite;
+    animation-delay: var(--delay);
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.2; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.5); }
+  }
+
+  /* ===== TOP BAR ===== */
+  .topbar {
+    position: relative; z-index: 10;
+    padding: 24px 40px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    flex-wrap: wrap; gap: 16px;
+  }
+  .topbar .logo-area h1 {
+    font-size: 26px; font-weight: 900; letter-spacing: -1px;
+    background: linear-gradient(135deg, #e2e8f0, #fbbf24, #e2e8f0);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .topbar .logo-area span {
+    font-size: 10px; color: #64748b; letter-spacing: 3px; text-transform: uppercase;
+  }
+  .topbar .badges { display: flex; gap: 10px; flex-wrap: wrap; }
+  .topbar .badge {
+    padding: 5px 14px; border-radius: 50px;
+    font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  }
+  .badge-blue { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+  .badge-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+  .badge-amber { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+  .badge-purple { background: rgba(139,92,246,0.15); color: #a78bfa; border: 1px solid rgba(139,92,246,0.3); }
+  .badge-red { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+
+  @media (max-width: 767px) {
+    .topbar { padding: 16px 16px; }
+    .topbar .logo-area h1 { font-size: 18px; }
+    .topbar .badge { font-size: 8px; padding: 4px 10px; }
+  }
+
+  /* ===== MAIN WRAPPER ===== */
+  .main-wrap {
+    position: relative; z-index: 5;
+    display: flex; flex-direction: column;
+    padding: 0 16px 60px;
+  }
+
+  /* ===== SVG CONTAINER ===== */
+  .svg-container {
+    position: relative; width: 100%;
+    max-width: 1800px; margin: 0 auto;
+    border-radius: 20px;
+    background: radial-gradient(ellipse at 50% 0%, rgba(59,130,246,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 80%, rgba(139,92,246,0.05) 0%, transparent 50%);
+    border: 1px solid rgba(255,255,255,0.05);
+    overflow: hidden;
+  }
+  #workflow-svg { width: 100%; display: block; }
+  .node-group { cursor: pointer; transition: filter 0.25s ease; }
+  .node-group:hover { filter: brightness(1.3) drop-shadow(0 6px 24px rgba(255,255,255,0.12)); }
+  .node-group:hover > rect:first-of-type { stroke-width: 2.5; }
+
+  @media (max-width: 767px) { .svg-container { display: none; } }
+  @media (min-width: 768px) and (max-width: 1199px) {
+    .svg-container { max-width: 100%; }
+  }
+
+  /* ===== MOBILE STEP CARDS ===== */
+  .mobile-cards-wrap { display: none; }
+  @media (max-width: 767px) {
+    .mobile-cards-wrap { display: block; }
+  }
+  .mobile-cards-wrap .section-intro {
+    text-align: center; padding: 24px 8px 8px;
+  }
+  .mobile-cards-wrap .section-intro h2 {
+    font-size: 22px; font-weight: 900;
+    background: linear-gradient(135deg, #fbbf24, #e8a020);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .mobile-cards-wrap .section-intro p {
+    font-size: 11px; color: #64748b; letter-spacing: 1.5px; text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .phase-label-mob {
+    font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #64748b;
+    text-transform: uppercase; padding: 16px 8px 8px; text-align: center;
+  }
+  .mobile-cards-grid {
+    display: flex; flex-direction: column; gap: 10px; padding: 0 4px;
+  }
+  .mob-card {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: linear-gradient(180deg, rgba(10,22,40,0.95), rgba(15,30,50,0.95));
+    border: 1px solid rgba(255,255,255,0.06); border-radius: 14px;
+    padding: 16px 14px; cursor: pointer;
+    transition: all 0.25s; position: relative; overflow: hidden;
+  }
+  .mob-card:hover, .mob-card:active { border-color: var(--clr, #fbbf24); transform: translateY(-1px); }
+  .mob-card .mc-accent {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 4px; background: var(--clr, #3b82f6); border-radius: 2px 0 0 2px;
+  }
+  .mob-card .mc-icon { font-size: 28px; flex-shrink: 0; line-height: 1; }
+  .mob-card .mc-body { flex: 1; min-width: 0; }
+  .mob-card .mc-tag {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--clr, #3b82f6);
+    margin-bottom: 2px;
+  }
+  .mob-card .mc-title { font-size: 14px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px; }
+  .mob-card .mc-desc { font-size: 11px; color: #64748b; line-height: 1.5; }
+
+  /* ===== TIMELINE SECTION ===== */
+  .timeline-section {
+    position: relative; z-index: 5;
+    max-width: 1800px; margin: 40px auto 0; width: 100%;
+  }
+  .timeline-section .section-title {
+    text-align: center; margin-bottom: 32px;
+  }
+  .timeline-section .section-title h2 {
+    font-size: 28px; font-weight: 900;
+    background: linear-gradient(135deg, #fbbf24, #e8a020);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .timeline-section .section-title p {
+    font-size: 13px; color: #64748b; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px;
+  }
+  .timeline-row {
+    display: flex; gap: 16px; overflow-x: auto;
+    padding: 8px 4px 20px;
+    scrollbar-width: thin; scrollbar-color: #1e3a5f transparent;
+    -webkit-overflow-scrolling: touch;
+  }
+  .timeline-row::-webkit-scrollbar { height: 6px; }
+  .timeline-row::-webkit-scrollbar-track { background: transparent; }
+  .timeline-row::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 3px; }
+
+  .tl-card {
+    min-width: 220px; flex-shrink: 0;
+    background: linear-gradient(180deg, rgba(10,22,40,0.9), rgba(15,30,50,0.9));
+    border: 1px solid rgba(255,255,255,0.06); border-radius: 16px;
+    padding: 22px 20px; position: relative; overflow: hidden;
+    transition: all 0.3s;
+  }
+  .tl-card:hover {
+    border-color: var(--clr, #f59e0b);
+    box-shadow: 0 4px 24px var(--glow, rgba(245,158,11,0.15));
+    transform: translateY(-3px);
+  }
+  .tl-card .tl-week {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--clr, #f59e0b); margin-bottom: 8px;
+  }
+  .tl-card .tl-phase { font-size: 14px; font-weight: 800; color: #f1f5f9; margin-bottom: 8px; }
+  .tl-card .tl-desc { font-size: 12px; color: #64748b; line-height: 1.6; }
+  .tl-card .tl-dot {
+    position: absolute; top: 22px; right: 18px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--clr, #f59e0b); box-shadow: 0 0 12px var(--clr, #f59e0b);
+  }
+
+  @media (max-width: 767px) {
+    .timeline-section .section-title h2 { font-size: 22px; }
+    .tl-card { min-width: 200px; padding: 16px 14px; }
+    .tl-card .tl-phase { font-size: 12px; }
+    .tl-card .tl-desc { font-size: 11px; }
+  }
+
+  /* ===== DETAIL PANEL ===== */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+    z-index: 98; opacity: 0; pointer-events: none;
+    transition: opacity 0.35s;
+  }
+  .overlay.active { opacity: 1; pointer-events: auto; }
+
+  .detail-panel {
+    position: fixed; top: 0; right: -520px; width: 480px; height: 100vh;
+    background: #0b1a30; border-left: 1px solid rgba(255,255,255,0.08);
+    box-shadow: -8px 0 48px rgba(0,0,0,0.6);
+    z-index: 99; transition: right 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+    padding: 40px 30px; overflow-y: auto;
+  }
+  .detail-panel.active { right: 0; }
+  .detail-panel .close-btn {
+    position: absolute; top: 16px; right: 20px;
+    background: rgba(255,255,255,0.05); border: none;
+    color: #94a3b8; font-size: 22px; cursor: pointer;
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .detail-panel .close-btn:hover { background: rgba(255,255,255,0.1); color: #f1f5f9; }
+  .detail-panel h2 { font-size: 20px; font-weight: 800; margin: 12px 0 4px; }
+  .detail-panel .mod-tag {
+    display: inline-block; padding: 4px 12px; border-radius: 6px;
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; margin-bottom: 16px;
+  }
+  .detail-panel .desc { font-size: 13px; color: #94a3b8; line-height: 1.7; margin-bottom: 20px; }
+  .detail-panel .fl { list-style: none; }
+  .detail-panel .fl li {
+    padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 12px; color: #cbd5e1; display: flex; gap: 10px; align-items: flex-start;
+  }
+  .detail-panel .fl li::before {
+    content: ''; width: 5px; height: 5px; background: var(--gold); border-radius: 50%;
+    margin-top: 6px; flex-shrink: 0;
+  }
+
+  @media (max-width: 767px) {
+    .detail-panel { width: 100%; right: -100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- STARS -->
+<div class="stars" id="stars"></div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo-area">
+    <h1>Audit Management System</h1>
+    <span>Interactive System Workflow &amp; Delivery Timeline</span>
+  </div>
+  <div class="badges">
+    <span class="badge badge-green">ASP.NET Core 8</span>
+    <span class="badge badge-blue">React.js 18</span>
+    <span class="badge badge-amber">MS SQL Server</span>
+    <span class="badge badge-purple">15+ Modules</span>
+    <span class="badge badge-red">64 Features</span>
+  </div>
+</div>
+
+<!-- ==================== MOBILE STEP CARDS ==================== -->
+<div class="mobile-cards-wrap" id="mobileCards">
+  <div class="section-intro">
+    <h2>AMS Workflow — End to End</h2>
+    <p>Tap any module for details</p>
+  </div>
+
+  <div class="phase-label-mob">Phase 1 — Setup &amp; Configuration</div>
+  <div class="mobile-cards-grid">
+    <div class="mob-card" style="--clr:#3b82f6" onclick="show('master')">
+      <div class="mc-accent"></div>
+      <div class="mc-icon">&#x1F4CA;</div>
+      <div class="mc-body">
+        <div class="mc-tag">Module 1</div>
+        <div class="mc-title">Master Data Management</div>
+        <div class="mc-desc">Branch, PACS, Users, FY, Audit Types — bulk import via Excel</div>
+      </div>
+    </div>
+    <div class="mob-card" style="--clr:#8b5cf6" onclick="show('template')">
+      <div class="mc-accent"></div>
+      <div class="mc-icon">&#x1F9E9;</div>
+      <div class="mc-body">
+        <div class="mc-tag">Module 2 — Dynamic Engine 1</div>
+        <div class="mc-title">Template Builder</div>
+        <div class="mc-desc">No-code designer: Sections, Fields, Scoring, Value Statements — fully configurable</div>
+      </div>
+    </div>
+    <div class="mob-card" style="--clr:#10b981" onclick="show('planning')">
+      <div class="mc-accent"></div>
+      <div class="mc-icon">&#x1F4C5;</div>
+      <div class="mc-body">
+        <div class="mc-tag">Module 3</div>
+        <div class="mc-title">Audit Planning</div>
+        <div class="mc-desc">Calendar, Gantt, Plan vs Actual, Ad-hoc audits with approval workflow</div>
+      </div>
+    </div>
+    <div class="mob-card" style="--clr:#10b981" onclick="show('execution')">
+      <div class="mc-accent"></div>
+      <div class="mc-icon">&#x1F4DD;</div>
+      <div class="mc-body">
+        <div class="mc-tag">Module 4 — Field App</div>
+        <div class="mc-title">Audit Execution</div>
+        <div class="mc-desc">Section wizard, evidence capture, live risk scoring, offline PWA, e-sign</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-label-mob">Phase 2 — Execution &amp; Review</div>
+  <div class="mobile-cards-grid">
+    <div class="mob-card" style="--clr:#ef4444" onclick="show('observations')">
+      <div class="mc-accent"></div>
+      <div class="mc-icon">&#x26A0;</div>
+      <div class="mc-body">
+        <div class="mc-tag">Auto-Generated</div>
+        <div class="mc-title">Observations</div>
+        <div class="mc-desc">Non-compliant answers auto-promoted to formal observations with severity &amp; target date</div>
+      </div>
+    </div>
+    <div class="mob-card" style="--clr:#ef4444" onclick="show('compliance')">
+      <div class="mc-accent"></div>
+      <div class="mc-icon">&#x2705;</div>
+      <div class="mc-body">
+        <div class="mc-tag">Module 5</div>
+        <div class="mc-title">Compliance Module</div>
+        <div class="mc-desc">Rectification tracking with colour-coded ageing, SLA escalation, verification workflow</div>
+      </div>
+    </div>
+    <div class="mob-card" style="--clr:#f59e0b" onclick="show('hia')">
+      <div class="mc-accent"></div>
+      <div class="mc-icon">&#x1F4CB;</div>
+      <div class="mc-body">
+        <div class="mc-tag">Module 6 — HIA Command Centre</div>
+        <div class="mc-title">HIA Review</div>
+        <div class="mc-desc">Review inbox, approve/return/escalate/override, portfolio dashboards, heat-maps</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-label-mob">Phase 3 — Platform &amp; Engines</div>
+  <div class="mobile-cards-grid">
+    <div class="mob-card" style="--clr:#f59e0b" onclick="show('workflow')">
+      <div class="mc-accent"></div>
+      <div class="mc-icon">&#x1F504;</div>
+      <div class="mc-body">
+        <div class="mc-tag">Dynamic Engine 2</div>
+        <div class="mc-title">Workflow Engine</div>
+        <div class="mc-desc">Configurable state machine — approval routing, SLA, conditions, delegation</div>
+      </div>
+    </div>
+    <div class="mob-card" style="--clr:#8b5cf6" onclick="show('rbac')">
+      <div class="mc-accent"></div>
+      <div class="mc-icon">&#x1F6E1;</div>
+      <div class="mc-body">
+        <div class="mc-tag">Dynamic Engine 3</div>
+        <div class="mc-title">RBAC Engine</div>
+        <div class="mc-desc">User → Role → Permission + Data Scope, field-level access, row-level security</div>
+      </div>
+    </div>
+    <div class="mob-card" style="--clr:#06b6d4" onclick="show('documents')">
+      <div class="mc-accent"></div>
+      <div class="mc-icon">&#x1F4C1;</div>
+      <div class="mc-body">
+        <div class="mc-tag">Module 10</div>
+        <div class="mc-title">Evidence Management</div>
+        <div class="mc-desc">Versioned storage, virus scanning, configurable retention, audit trail of access</div>
+      </div>
+    </div>
+    <div class="mob-card" style="--clr:#3b82f6" onclick="show('auditlog')">
+      <div class="mc-accent"></div>
+      <div class="mc-icon">&#x1F4CB;</div>
+      <div class="mc-body">
+        <div class="mc-tag">Module 11</div>
+        <div class="mc-title">Immutable Audit Log</div>
+        <div class="mc-desc">WHO did WHAT, WHICH record, WHEN — full before/after values, no hard deletes</div>
+      </div>
+    </div>
+    <div class="mob-card" style="--clr:#10b981" onclick="show('task')">
+      <div class="mc-accent"></div>
+      <div class="mc-icon">&#x2705;</div>
+      <div class="mc-body">
+        <div class="mc-tag">Module 12</div>
+        <div class="mc-title">Task Manager</div>
+        <div class="mc-desc">Create, assign, track tasks with dependencies, deadlines, and automated reminders</div>
+      </div>
+    </div>
+    <div class="mob-card" style="--clr:#06b6d4" onclick="show('pipeline')">
+      <div class="mc-accent"></div>
+      <div class="mc-icon">&#x1F3D7;</div>
+      <div class="mc-body">
+        <div class="mc-tag">Module 13 — Automation Engine</div>
+        <div class="mc-title">Pipeline Builder</div>
+        <div class="mc-desc">Visual step designer, auto-trigger workflows, smart scheduling, one-time setup runs all year</div>
+      </div>
+    </div>
+    <div class="mob-card" style="--clr:#f59e0b" onclick="show('company')">
+      <div class="mc-accent"></div>
+      <div class="mc-icon">&#x2699;</div>
+      <div class="mc-body">
+        <div class="mc-tag">Module 14</div>
+        <div class="mc-title">Company Settings</div>
+        <div class="mc-desc">Numbering, prefixes, letterhead, logo, document templates — all from admin panel</div>
+      </div>
+    </div>
+    <div class="mob-card" style="--clr:#e11d48" onclick="show('notifications')">
+      <div class="mc-accent"></div>
+      <div class="mc-icon">&#x1F514;</div>
+      <div class="mc-body">
+        <div class="mc-tag">Module 9</div>
+        <div class="mc-title">Notifications &amp; Reminders</div>
+        <div class="mc-desc">In-app, Email, SMS — event-based triggers, configurable templates, digest summaries</div>
+      </div>
+    </div>
+    <div class="mob-card" style="--clr:#e11d48" onclick="show('config')">
+      <div class="mc-accent"></div>
+      <div class="mc-icon">&#x1F512;</div>
+      <div class="mc-body">
+        <div class="mc-tag">Module 15</div>
+        <div class="mc-title">Config &amp; IP Login</div>
+        <div class="mc-desc">Feature toggles, trigger rules, IP whitelist, auto-logout on IP change</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-label-mob">Phase 4 — Closure, Reports &amp; Extras</div>
+  <div class="mobile-cards-grid">
+    <div class="mob-card" style="--clr:#06b6d4" onclick="show('closure')">
+      <div class="mc-accent"></div>
+      <div class="mc-icon">&#x1F4DC;</div>
+      <div class="mc-body">
+        <div class="mc-tag">Module 7</div>
+        <div class="mc-title">Audit Closure</div>
+        <div class="mc-desc">Closure certificate (PDF) + e-sign, locked audits, permissioned reopen</div>
+      </div>
+    </div>
+    <div class="mob-card" style="--clr:#3b82f6" onclick="show('reporting')">
+      <div class="mc-accent"></div>
+      <div class="mc-icon">&#x1F4CA;</div>
+      <div class="mc-body">
+        <div class="mc-tag">Module 8</div>
+        <div class="mc-title">Reporting &amp; MIS</div>
+        <div class="mc-desc">Print-ready PDF, 5+ standard MIS reports, ad-hoc builder, role-based dashboards</div>
+      </div>
+    </div>
+    <div class="mob-card" style="--clr:#8b5cf6" onclick="show('ai')">
+      <div class="mc-accent"></div>
+      <div class="mc-icon">&#x1F916;</div>
+      <div class="mc-body">
+        <div class="mc-tag">Extra Feature #1</div>
+        <div class="mc-title">AI Anomaly Detection</div>
+        <div class="mc-desc">Auto-detect anomalies, fraud patterns, predictive risk scoring, trend alerts</div>
+      </div>
+    </div>
+    <div class="mob-card" style="--clr:#10b981" onclick="show('whatsapp')">
+      <div class="mc-accent"></div>
+      <div class="mc-icon">&#x1F4F2;</div>
+      <div class="mc-body">
+        <div class="mc-tag">Extra Feature #2</div>
+        <div class="mc-title">WhatsApp Integration</div>
+        <div class="mc-desc">Instant alerts, compliance follow-up, voice note escalation, weekly digest cards</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SVG WORKFLOW (TABLET + DESKTOP) ==================== -->
+<div class="main-wrap">
+  <div class="svg-container">
+    <svg id="workflow-svg" viewBox="0 0 2050 1150" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="g-blue" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1d4ed8"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+        <linearGradient id="g-green" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#047857"/><stop offset="1" stop-color="#10b981"/></linearGradient>
+        <linearGradient id="g-amber" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#92400e"/><stop offset="1" stop-color="#f59e0b"/></linearGradient>
+        <linearGradient id="g-purple" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b21b6"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient>
+        <linearGradient id="g-red" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#991b1b"/><stop offset="1" stop-color="#ef4444"/></linearGradient>
+        <linearGradient id="g-cyan" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0e7490"/><stop offset="1" stop-color="#06b6d4"/></linearGradient>
+        <linearGradient id="g-rose" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9f1239"/><stop offset="1" stop-color="#e11d48"/></linearGradient>
+
+        <filter id="glow-b" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="3" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+          <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#000" flood-opacity="0.5"/>
+        </filter>
+
+        <marker id="ma-blue" w="8" h="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#3b82f6"/></marker>
+        <marker id="ma-green" w="8" h="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#10b981"/></marker>
+        <marker id="ma-amber" w="8" h="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#f59e0b"/></marker>
+        <marker id="ma-purple" w="8" h="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#8b5cf6"/></marker>
+        <marker id="ma-red" w="8" h="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#ef4444"/></marker>
+        <marker id="ma-cyan" w="8" h="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#06b6d4"/></marker>
+
+        <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+          <path d="M50 0L0 0 0 50" fill="none" stroke="rgba(255,255,255,0.02)" stroke-width="0.5"/>
+        </pattern>
+      </defs>
+
+      <rect width="100%" height="100%" fill="url(#grid)"/>
+      <ellipse cx="300" cy="150" rx="350" ry="200" fill="rgba(59,130,246,0.03)"/>
+      <ellipse cx="1100" cy="550" rx="400" ry="250" fill="rgba(139,92,246,0.02)"/>
+      <ellipse cx="1500" cy="300" rx="250" ry="200" fill="rgba(245,158,11,0.02)"/>
+
+      <!-- Phase 1 Header -->
+      <rect x="0" y="76" width="1800" height="34" fill="rgba(30,58,95,0.35)"/>
+      <text x="50" y="97" fill="#64748b" font-size="10" font-weight="700" letter-spacing="2.5">PHASE 1 — SETUP &amp; CONFIGURATION</text>
+
+      <!-- Phase 2 Header -->
+      <rect x="0" y="284" width="1800" height="34" fill="rgba(30,58,95,0.35)"/>
+      <text x="50" y="305" fill="#64748b" font-size="10" font-weight="700" letter-spacing="2.5">PHASE 2 — EXECUTION &amp; REVIEW</text>
+
+      <!-- Phase 3-4 Header -->
+      <rect x="0" y="578" width="1800" height="34" fill="rgba(30,58,95,0.35)"/>
+      <text x="50" y="599" fill="#64748b" font-size="10" font-weight="700" letter-spacing="2.5">PHASE 3 — PLATFORM, CLOSURE &amp; REPORTING</text>
+
+      <!-- Phase 5 Header -->
+      <rect x="0" y="848" width="1800" height="34" fill="rgba(30,58,95,0.35)"/>
+      <text x="50" y="869" fill="#64748b" font-size="10" font-weight="700" letter-spacing="2.5">PHASE 4 — INTELLIGENCE &amp; COMMUNICATION</text>
+
+      <!-- ========== CONNECTIONS ========== -->
+
+      <!-- Master → Template -->
+      <path d="M265,155 C290,155 300,155 325,155" fill="none" stroke="#3b82f6" stroke-width="1.8" marker-end="url(#ma-blue)"/>
+
+      <!-- Template → Planning -->
+      <path d="M545,160 C570,160 575,160 595,160" fill="none" stroke="#3b82f6" stroke-width="1.8" marker-end="url(#ma-blue)"/>
+
+      <!-- Planning → Execution -->
+      <path d="M810,160 C840,160 845,160 875,160" fill="none" stroke="#10b981" stroke-width="2.5">
+        <animate attributeName="stroke-dashoffset" from="0" to="-20" dur="0.6s" repeatCount="indefinite"/>
+      </path>
+      <circle r="4" fill="#10b981" filter="url(#glow-b)">
+        <animateMotion dur="2s" repeatCount="indefinite" path="M810,160 L875,160"/>
+      </circle>
+
+      <!-- Execution → Observations -->
+      <path d="M1045,285 C1045,310 1045,315 1045,325" fill="none" stroke="#ef4444" stroke-width="2" marker-end="url(#ma-red)"/>
+
+      <!-- Observations → Compliance -->
+      <path d="M1045,365 C1045,385 1045,400 1045,425" fill="none" stroke="#ef4444" stroke-width="2" marker-end="url(#ma-red)"/>
+
+      <!-- Execution → HIA (submit flow) -->
+      <path d="M1080,285 C1200,295 1260,330 1260,415 C1260,440 1270,460 1305,480" fill="none" stroke="#f59e0b" stroke-width="2.5">
+        <animate attributeName="stroke-dashoffset" from="0" to="-30" dur="0.8s" repeatCount="indefinite" begin="0.3s"/>
+      </path>
+      <circle r="4.5" fill="#f59e0b" filter="url(#glow-b)">
+        <animateMotion dur="3.5s" repeatCount="indefinite" begin="0.4s" path="M1080,285 C1200,295 1260,330 1260,415 C1260,440 1270,460 1305,480"/>
+      </circle>
+
+      <!-- Compliance → HIA -->
+      <path d="M1155,490 C1180,490 1200,490 1225,490" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6,4" marker-end="url(#ma-amber)" opacity="0.5"/>
+
+      <!-- HIA → Closure -->
+      <path d="M1335,565 C1335,590 1335,605 1335,625" fill="none" stroke="#10b981" stroke-width="3">
+        <animate attributeName="stroke-dashoffset" from="0" to="-24" dur="0.6s" repeatCount="indefinite" begin="0.5s"/>
+      </path>
+      <circle r="4.5" fill="#10b981" filter="url(#glow-b)">
+        <animateMotion dur="2s" repeatCount="indefinite" begin="0.6s" path="M1335,565 L1335,625"/>
+      </circle>
+
+      <!-- Closure → Reporting -->
+      <path d="M1445,655 C1500,655 1530,655 1545,655" fill="none" stroke="#3b82f6" stroke-width="2" marker-end="url(#ma-blue)"/>
+
+      <!-- Workflow Engine connections -->
+      <path d="M225,345 C350,365 500,380 640,395" fill="none" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4,7" marker-end="url(#ma-amber)" opacity="0.3"/>
+      <path d="M225,345 C500,390 700,415 870,430" fill="none" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4,7" marker-end="url(#ma-amber)" opacity="0.3"/>
+      <path d="M225,345 C800,430 1000,460 1225,490" fill="none" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4,7" marker-end="url(#ma-amber)" opacity="0.3"/>
+
+      <!-- RBAC connections -->
+      <path d="M225,435 C400,425 600,435 800,410" fill="none" stroke="#8b5cf6" stroke-width="1" stroke-dasharray="3,9" marker-end="url(#ma-purple)" opacity="0.25"/>
+      <path d="M225,435 C600,445 850,435 1100,410" fill="none" stroke="#8b5cf6" stroke-width="1" stroke-dasharray="3,9" marker-end="url(#ma-purple)" opacity="0.25"/>
+
+      <!-- Pipeline → Planning feedback -->
+      <path d="M635,760 C700,720 720,600 750,500 C780,400 780,300 810,230" fill="none" stroke="#06b6d4" stroke-width="1.2" stroke-dasharray="5,5" marker-end="url(#ma-cyan)" opacity="0.35"/>
+
+      <!-- AI → HIA/Closure -->
+      <path d="M1160,870 C1220,840 1280,800 1320,760 C1335,740 1335,720 1335,680" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-dasharray="6,4">
+        <animate attributeName="stroke-dashoffset" from="0" to="-20" dur="1s" repeatCount="indefinite"/>
+      </path>
+
+      <!-- WhatsApp → broadcast -->
+      <path d="M1625,870 C1400,860 1280,870 1180,860" fill="none" stroke="#10b981" stroke-width="1.2" stroke-dasharray="5,5" marker-end="url(#ma-green)" opacity="0.35"/>
+      <path d="M1625,870 C1300,890 1100,900 900,900" fill="none" stroke="#10b981" stroke-width="1.2" stroke-dasharray="5,5" marker-end="url(#ma-green)" opacity="0.35"/>
+
+      <!-- ========== NODES ========== -->
+
+      <!-- PHASE 1 NODES -->
+
+      <!-- 1. Master Data -->
+      <g class="node-group" onclick="show('master')" transform="translate(25,80)">
+        <rect x="0" y="0" width="300" height="100" rx="14" fill="#0a1628" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow)">
+          <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="0" y="0" width="7" height="100" rx="3" fill="url(#g-blue)"/>
+        <text x="22" y="30" fill="#93c5fd" font-size="11" font-weight="700" letter-spacing="2">MODULE 1</text>
+        <text x="22" y="54" fill="#f1f5f9" font-size="18" font-weight="800">Master Data</text>
+        <text x="22" y="74" fill="#94a3b8" font-size="12">Branch &bull; PACS &bull; Users &bull; FY &bull; Audit Types</text>
+      </g>
+
+      <!-- 2. Template Builder -->
+      <g class="node-group" onclick="show('template')" transform="translate(360,80)">
+        <rect x="0" y="0" width="340" height="115" rx="14" fill="#0a1628" stroke="#8b5cf6" stroke-width="1.5" filter="url(#shadow)">
+          <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" begin="1s"/>
+        </rect>
+        <rect x="0" y="0" width="7" height="115" rx="3" fill="url(#g-purple)"/>
+        <text x="22" y="28" fill="#c4b5fd" font-size="11" font-weight="700" letter-spacing="2">MODULE 2 — DYNAMIC ENGINE 1</text>
+        <text x="22" y="52" fill="#f1f5f9" font-size="18" font-weight="800">Template Builder</text>
+        <text x="22" y="72" fill="#94a3b8" font-size="12">Sections, Fields, Scoring, Value Statements</text>
+        <text x="22" y="92" fill="#a78bfa" font-size="11">Versioned &bull; Preview &bull; Import/Export &bull; No-Code</text>
+      </g>
+
+      <!-- 3. Audit Planning -->
+      <g class="node-group" onclick="show('planning')" transform="translate(735,80)">
+        <rect x="0" y="0" width="310" height="100" rx="14" fill="#0a1628" stroke="#10b981" stroke-width="1.5" filter="url(#shadow)">
+          <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" begin="0.5s"/>
+        </rect>
+        <rect x="0" y="0" width="7" height="100" rx="3" fill="url(#g-green)"/>
+        <text x="22" y="30" fill="#6ee7b7" font-size="11" font-weight="700" letter-spacing="2">MODULE 3</text>
+        <text x="22" y="54" fill="#f1f5f9" font-size="18" font-weight="800">Audit Planning</text>
+        <text x="22" y="74" fill="#94a3b8" font-size="12">Calendar &bull; Gantt &bull; Plan vs Actual &bull; Ad-hoc</text>
+      </g>
+
+      <!-- 4. Audit Execution (BIG) -->
+      <g class="node-group" onclick="show('execution')" transform="translate(1080,80)">
+        <rect x="0" y="0" width="440" height="210" rx="16" fill="#0a1628" stroke="#10b981" stroke-width="2.5" filter="url(#shadow)">
+          <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" begin="1.5s"/>
+        </rect>
+        <rect x="0" y="0" width="9" height="210" rx="4" fill="url(#g-green)"/>
+        <text x="28" y="32" fill="#6ee7b7" font-size="11" font-weight="700" letter-spacing="2">MODULE 4 — FIELD APP</text>
+        <text x="28" y="58" fill="#f1f5f9" font-size="20" font-weight="800">Audit Execution</text>
+        <text x="28" y="80" fill="#94a3b8" font-size="13">Section-by-Section Wizard &bull; Evidence Capture</text>
+        <text x="28" y="102" fill="#94a3b8" font-size="13">Live Risk Scoring Panel &bull; Offline Mode (PWA)</text>
+        <text x="28" y="124" fill="#94a3b8" font-size="13">Observation Auto-Promotion &bull; E-Sign</text>
+        <text x="28" y="146" fill="#94a3b8" font-size="13">Auditor Worklist &bull; Dynamic Form Renderer</text>
+        <text x="28" y="168" fill="#94a3b8" font-size="13">Auto-Save Drafts &bull; Conflict Resolution</text>
+        <text x="28" y="192" fill="#fbbf24" font-size="12" font-weight="700">&#x1F4F1; Web + Tablet + Mobile &bull; Offline-Ready PWA</text>
+      </g>
+
+      <!-- PHASE 2 NODES -->
+
+      <!-- 5. Observations -->
+      <g class="node-group" onclick="show('observations')" transform="translate(1115,330)">
+        <rect x="0" y="0" width="230" height="70" rx="12" fill="#0a1628" stroke="#ef4444" stroke-width="2" filter="url(#shadow)">
+          <animate attributeName="stroke-opacity" values="0.7;1;0.7" dur="2s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="0" y="0" width="6" height="70" rx="3" fill="url(#g-red)"/>
+        <text x="20" y="26" fill="#fca5a5" font-size="10" font-weight="700" letter-spacing="1.5">NON-COMPLIANT</text>
+        <text x="20" y="50" fill="#f1f5f9" font-size="17" font-weight="800">&#x26A0; Observations</text>
+      </g>
+
+      <!-- 6. Compliance Module -->
+      <g class="node-group" onclick="show('compliance')" transform="translate(1080,440)">
+        <rect x="0" y="0" width="420" height="175" rx="14" fill="#0a1628" stroke="#ef4444" stroke-width="2" filter="url(#shadow)">
+          <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" begin="1.8s"/>
+        </rect>
+        <rect x="0" y="0" width="8" height="175" rx="4" fill="url(#g-red)"/>
+        <text x="26" y="30" fill="#fca5a5" font-size="11" font-weight="700" letter-spacing="2">MODULE 5</text>
+        <text x="26" y="54" fill="#f1f5f9" font-size="19" font-weight="800">Compliance Module</text>
+        <text x="26" y="78" fill="#94a3b8" font-size="13">Rectification Submission + Evidence Upload</text>
+        <text x="26" y="100" fill="#94a3b8" font-size="13">Colour-Coded Ageing &amp; SLA-Based Escalation</text>
+        <text x="26" y="122" fill="#94a3b8" font-size="13">Per-Observation Verification Workflow</text>
+        <text x="26" y="144" fill="#94a3b8" font-size="13">Repeat-Observation Detection Across Cycles</text>
+        <text x="26" y="166" fill="#fbbf24" font-size="11" font-weight="700">&#x23F0; Auto-Escalate to HIA on SLA Breach</text>
+      </g>
+
+      <!-- 7. HIA Review -->
+      <g class="node-group" onclick="show('hia')" transform="translate(1540,440)">
+        <rect x="0" y="0" width="400" height="195" rx="14" fill="#0a1628" stroke="#f59e0b" stroke-width="2.5" filter="url(#shadow)">
+          <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" begin="0.7s"/>
+        </rect>
+        <rect x="0" y="0" width="9" height="195" rx="4" fill="url(#g-amber)"/>
+        <text x="28" y="30" fill="#fde68a" font-size="11" font-weight="700" letter-spacing="2">MODULE 6 — HIA COMMAND CENTRE</text>
+        <text x="28" y="56" fill="#f1f5f9" font-size="20" font-weight="800">HIA Review</text>
+        <text x="28" y="80" fill="#94a3b8" font-size="13">Review Inbox with Risk Rating Summary</text>
+        <text x="28" y="102" fill="#94a3b8" font-size="13">Approve / Return / Escalate / Override Risk</text>
+        <text x="28" y="124" fill="#94a3b8" font-size="13">Portfolio Dashboard &amp; Bank-Wide Heat-Map</text>
+        <text x="28" y="146" fill="#94a3b8" font-size="13">Auditor TAT, Workload &amp; Productivity Reports</text>
+        <text x="28" y="168" fill="#94a3b8" font-size="13">Drill-Down from Dashboard to Audit Instance</text>
+        <text x="28" y="188" fill="#fbbf24" font-size="11" font-weight="700">&#x1F4CA; Reassign Audits &bull; Initiate Surprise Audits</text>
+      </g>
+
+      <!-- 8. Workflow Engine -->
+      <g class="node-group" onclick="show('workflow')" transform="translate(25,330)">
+        <rect x="0" y="0" width="250" height="90" rx="12" fill="#0a1628" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)">
+          <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="2.5s" repeatCount="indefinite" begin="1s"/>
+        </rect>
+        <rect x="0" y="0" width="7" height="90" rx="3" fill="url(#g-amber)"/>
+        <text x="20" y="28" fill="#fde68a" font-size="10" font-weight="700" letter-spacing="1.5">DYNAMIC ENGINE 2</text>
+        <text x="20" y="52" fill="#f1f5f9" font-size="17" font-weight="800">Workflow Engine</text>
+        <text x="20" y="72" fill="#94a3b8" font-size="12">Approval &bull; SLA &bull; Routing &bull; Delegation</text>
+      </g>
+
+      <!-- 9. RBAC Engine -->
+      <g class="node-group" onclick="show('rbac')" transform="translate(25,440)">
+        <rect x="0" y="0" width="250" height="90" rx="12" fill="#0a1628" stroke="#8b5cf6" stroke-width="1.5" filter="url(#shadow)">
+          <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="2.5s" repeatCount="indefinite" begin="1.5s"/>
+        </rect>
+        <rect x="0" y="0" width="7" height="90" rx="3" fill="url(#g-purple)"/>
+        <text x="20" y="28" fill="#c4b5fd" font-size="10" font-weight="700" letter-spacing="1.5">DYNAMIC ENGINE 3</text>
+        <text x="20" y="52" fill="#f1f5f9" font-size="17" font-weight="800">RBAC Engine</text>
+        <text x="20" y="72" fill="#94a3b8" font-size="12">Roles &bull; Permissions &bull; Data Scoping</text>
+      </g>
+
+      <!-- 10. Evidence Management -->
+      <g class="node-group" onclick="show('documents')" transform="translate(25,550)">
+        <rect x="0" y="0" width="250" height="90" rx="12" fill="#0a1628" stroke="#06b6d4" stroke-width="1.5" filter="url(#shadow)">
+          <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" begin="3s"/>
+        </rect>
+        <rect x="0" y="0" width="7" height="90" rx="3" fill="url(#g-cyan)"/>
+        <text x="20" y="28" fill="#67e8f9" font-size="10" font-weight="700" letter-spacing="1.5">MODULE 10</text>
+        <text x="20" y="52" fill="#f1f5f9" font-size="17" font-weight="800">Evidence Mgmt</text>
+        <text x="20" y="72" fill="#94a3b8" font-size="12">File Storage &bull; Versioning &bull; Retention</text>
+      </g>
+
+      <!-- PHASE 3 NODES -->
+
+      <!-- 11. Audit Closure -->
+      <g class="node-group" onclick="show('closure')" transform="translate(1410,675)">
+        <rect x="0" y="0" width="340" height="120" rx="14" fill="#0a1628" stroke="#06b6d4" stroke-width="2" filter="url(#shadow)">
+          <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" begin="2.2s"/>
+        </rect>
+        <rect x="0" y="0" width="8" height="120" rx="4" fill="url(#g-cyan)"/>
+        <text x="24" y="30" fill="#67e8f9" font-size="11" font-weight="700" letter-spacing="2">MODULE 7</text>
+        <text x="24" y="54" fill="#f1f5f9" font-size="18" font-weight="800">Audit Closure</text>
+        <text x="24" y="78" fill="#94a3b8" font-size="13">Closure Certificate (PDF) + Digital E-Sign</text>
+        <text x="24" y="100" fill="#94a3b8" font-size="13">Locked Audits &amp; Permissioned Reopen</text>
+      </g>
+
+      <!-- 12. Reporting -->
+      <g class="node-group" onclick="show('reporting')" transform="translate(1780,675)">
+        <rect x="0" y="0" width="250" height="150" rx="14" fill="#0a1628" stroke="#3b82f6" stroke-width="2" filter="url(#shadow)">
+          <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" begin="3s"/>
+        </rect>
+        <rect x="0" y="0" width="8" height="150" rx="4" fill="url(#g-blue)"/>
+        <text x="24" y="30" fill="#93c5fd" font-size="11" font-weight="700" letter-spacing="2">MODULE 8</text>
+        <text x="24" y="54" fill="#f1f5f9" font-size="18" font-weight="800">Reporting &amp; MIS</text>
+        <text x="24" y="78" fill="#94a3b8" font-size="13">Print-Ready PDF (Register Style)</text>
+        <text x="24" y="100" fill="#94a3b8" font-size="13">5+ Standard MIS Reports</text>
+        <text x="24" y="122" fill="#94a3b8" font-size="13">Ad-hoc Report Builder</text>
+        <text x="24" y="142" fill="#fbbf24" font-size="11" font-weight="700">&#x1F4CA; Role-Based Dashboards</text>
+      </g>
+
+      <!-- 13. Task Manager -->
+      <g class="node-group" onclick="show('task')" transform="translate(300,675)">
+        <rect x="0" y="0" width="300" height="115" rx="14" fill="#0a1628" stroke="#10b981" stroke-width="2" filter="url(#shadow)">
+          <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" begin="1.2s"/>
+        </rect>
+        <rect x="0" y="0" width="7" height="115" rx="3" fill="url(#g-green)"/>
+        <text x="22" y="30" fill="#6ee7b7" font-size="11" font-weight="700" letter-spacing="2">MODULE 12</text>
+        <text x="22" y="54" fill="#f1f5f9" font-size="18" font-weight="800">Task Manager</text>
+        <text x="22" y="76" fill="#94a3b8" font-size="12">Create &bull; Assign &bull; Track Status</text>
+        <text x="22" y="96" fill="#94a3b8" font-size="12">Dependency Linking &bull; Deadline Reminders</text>
+      </g>
+
+      <!-- 14. Pipeline Builder -->
+      <g class="node-group" onclick="show('pipeline')" transform="translate(630,675)">
+        <rect x="0" y="0" width="400" height="180" rx="16" fill="#0a1628" stroke="#06b6d4" stroke-width="2.5" filter="url(#shadow)">
+          <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" begin="0.6s"/>
+        </rect>
+        <rect x="0" y="0" width="9" height="180" rx="4" fill="url(#g-cyan)"/>
+        <text x="28" y="30" fill="#67e8f9" font-size="11" font-weight="700" letter-spacing="2">MODULE 13 — AUTOMATION ENGINE</text>
+        <text x="28" y="56" fill="#f1f5f9" font-size="20" font-weight="800">Pipeline Builder</text>
+        <text x="28" y="80" fill="#94a3b8" font-size="13">Visual Step-by-Step Designer</text>
+        <text x="28" y="102" fill="#94a3b8" font-size="13">Auto-Trigger Templates &amp; Workflows</text>
+        <text x="28" y="124" fill="#94a3b8" font-size="13">Smart Scheduling + Deadline Reminders</text>
+        <text x="28" y="146" fill="#94a3b8" font-size="13">Missed Step &rarr; Instant Notification to Assignee</text>
+        <text x="28" y="168" fill="#fbbf24" font-size="12" font-weight="700">&#x1F3D7; One-Time Setup &rarr; Auto-Run Entire Year</text>
+      </g>
+
+      <!-- 15. Company Settings -->
+      <g class="node-group" onclick="show('company')" transform="translate(1060,675)">
+        <rect x="0" y="0" width="320" height="115" rx="14" fill="#0a1628" stroke="#f59e0b" stroke-width="2" filter="url(#shadow)">
+          <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" begin="2.5s"/>
+        </rect>
+        <rect x="0" y="0" width="7" height="115" rx="3" fill="url(#g-amber)"/>
+        <text x="22" y="30" fill="#fde68a" font-size="11" font-weight="700" letter-spacing="2">MODULE 14</text>
+        <text x="22" y="54" fill="#f1f5f9" font-size="18" font-weight="800">Company Settings</text>
+        <text x="22" y="76" fill="#94a3b8" font-size="12">Numbering &bull; Prefixes &bull; Letterhead</text>
+        <text x="22" y="96" fill="#94a3b8" font-size="12">Invoice Auto-Format &bull; Document Templates</text>
+      </g>
+
+      <!-- 16. Audit Log (left sidebar) -->
+      <g class="node-group" onclick="show('auditlog')" transform="translate(25,660)">
+        <rect x="0" y="0" width="250" height="90" rx="12" fill="#0a1628" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow)">
+          <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" begin="0.3s"/>
+        </rect>
+        <rect x="0" y="0" width="7" height="90" rx="3" fill="url(#g-blue)"/>
+        <text x="20" y="28" fill="#93c5fd" font-size="10" font-weight="700" letter-spacing="1.5">MODULE 11</text>
+        <text x="20" y="52" fill="#f1f5f9" font-size="17" font-weight="800">Audit Log</text>
+        <text x="20" y="72" fill="#94a3b8" font-size="12">Who &bull; What &bull; When &bull; Before/After</text>
+      </g>
+
+      <!-- 17. Notifications -->
+      <g class="node-group" onclick="show('notifications')" transform="translate(1760,310)">
+        <rect x="0" y="0" width="240" height="140" rx="14" fill="#0a1628" stroke="#e11d48" stroke-width="2" filter="url(#shadow)">
+          <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" begin="2s"/>
+        </rect>
+        <rect x="0" y="0" width="8" height="140" rx="4" fill="url(#g-rose)"/>
+        <text x="24" y="30" fill="#fda4af" font-size="11" font-weight="700" letter-spacing="2">MODULE 9</text>
+        <text x="24" y="54" fill="#f1f5f9" font-size="18" font-weight="800">Notifications</text>
+        <text x="24" y="78" fill="#94a3b8" font-size="12">In-App &bull; Email &bull; SMS</text>
+        <text x="24" y="100" fill="#94a3b8" font-size="12">Event-Based Triggers</text>
+        <text x="24" y="122" fill="#94a3b8" font-size="12">Daily/Weekly Digest for HIA</text>
+      </g>
+
+      <!-- PHASE 4 NODES -->
+
+      <!-- 18. Config + IP Login -->
+      <g class="node-group" onclick="show('config')" transform="translate(1290,890)">
+        <rect x="0" y="0" width="320" height="115" rx="14" fill="#0a1628" stroke="#e11d48" stroke-width="2" filter="url(#shadow)">
+          <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" begin="1.8s"/>
+        </rect>
+        <rect x="0" y="0" width="8" height="115" rx="4" fill="url(#g-rose)"/>
+        <text x="24" y="30" fill="#fda4af" font-size="11" font-weight="700" letter-spacing="2">MODULE 15</text>
+        <text x="24" y="54" fill="#f1f5f9" font-size="18" font-weight="800">Config &amp; IP Login</text>
+        <text x="24" y="78" fill="#94a3b8" font-size="12">Feature Toggles &bull; Trigger Rules</text>
+        <text x="24" y="98" fill="#94a3b8" font-size="12">IP Whitelist &bull; Auto-Logout on IP Change</text>
+      </g>
+
+      <!-- 19. AI Anomaly -->
+      <g class="node-group" onclick="show('ai')" transform="translate(855,890)">
+        <rect x="0" y="0" width="400" height="145" rx="16" fill="#0a1628" stroke="#8b5cf6" stroke-width="2.5" filter="url(#shadow)">
+          <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" begin="0.4s"/>
+        </rect>
+        <rect x="0" y="0" width="9" height="145" rx="4" fill="url(#g-purple)"/>
+        <circle cx="230" cy="22" r="18" fill="#8b5cf6" opacity="0.2">
+          <animate attributeName="r" values="18;28;18" dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.2;0.05;0.2" dur="2s" repeatCount="indefinite"/>
+        </circle>
+        <text x="28" y="36" fill="#c4b5fd" font-size="11" font-weight="700" letter-spacing="2">&#x1F916; EXTRA FEATURE #1</text>
+        <text x="28" y="60" fill="#f1f5f9" font-size="20" font-weight="800">AI Anomaly Detection</text>
+        <text x="28" y="84" fill="#94a3b8" font-size="13">Auto-Flag Anomalies &amp; Fraud Pattern Indicators</text>
+        <text x="28" y="106" fill="#94a3b8" font-size="13">Machine Learning Predictive Risk Scoring</text>
+        <text x="28" y="128" fill="#94a3b8" font-size="13">Trend-Based Alerts for Deteriorating Entities</text>
+      </g>
+
+      <!-- 20. WhatsApp -->
+      <g class="node-group" onclick="show('whatsapp')" transform="translate(1670,890)">
+        <rect x="0" y="0" width="300" height="145" rx="16" fill="#0a1628" stroke="#10b981" stroke-width="2.5" filter="url(#shadow)">
+          <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite" begin="1s"/>
+        </rect>
+        <rect x="0" y="0" width="9" height="145" rx="4" fill="url(#g-green)"/>
+        <circle cx="175" cy="22" r="18" fill="#10b981" opacity="0.2">
+          <animate attributeName="r" values="18;28;18" dur="2s" repeatCount="indefinite" begin="0.8s"/>
+          <animate attributeName="opacity" values="0.2;0.05;0.2" dur="2s" repeatCount="indefinite" begin="0.8s"/>
+        </circle>
+        <text x="28" y="36" fill="#6ee7b7" font-size="11" font-weight="700" letter-spacing="2">&#x1F4F2; EXTRA FEATURE #2</text>
+        <text x="28" y="60" fill="#f1f5f9" font-size="20" font-weight="800">WhatsApp API</text>
+        <text x="28" y="84" fill="#94a3b8" font-size="13">Instant Alerts &amp; Compliance Follow-Up</text>
+        <text x="28" y="106" fill="#94a3b8" font-size="13">Voice Note Escalation &amp; Weekly Digest</text>
+        <text x="28" y="128" fill="#94a3b8" font-size="13">Two-Way Chat &bull; RBI Compliant</text>
+      </g>
+
+      <!-- Title -->
+      <g transform="translate(1025,38)">
+        <rect x="-380" y="-16" width="760" height="34" rx="17" fill="rgba(15,30,50,0.9)" stroke="rgba(245,158,11,0.35)" stroke-width="1"/>
+        <text x="0" y="8" fill="#fbbf24" font-size="13" font-weight="800" letter-spacing="4" text-anchor="middle">AMS WORKFLOW — END TO END SYSTEM FLOW</text>
+      </g>
+    </svg>
+  </div>
+
+  <!-- ===== TIMELINE ===== -->
+  <div class="timeline-section">
+    <div class="section-title">
+      <h2>18-Week Delivery Timeline</h2>
+      <p>Phased Delivery with Continuous Feedback</p>
+    </div>
+    <div class="timeline-row">
+      <div class="tl-card" style="--clr:#3b82f6;--glow:rgba(59,130,246,0.15);">
+        <div class="tl-dot"></div>
+        <div class="tl-week">Weeks 1–2</div>
+        <div class="tl-phase">Foundation &amp; Master Data</div>
+        <div class="tl-desc">Environment provisioning, DB schema (45+ tables), CI/CD, Auth/RBAC engine, Branch/PACS/User masters with bulk import</div>
+      </div>
+      <div class="tl-card" style="--clr:#8b5cf6;--glow:rgba(139,92,246,0.15);">
+        <div class="tl-dot"></div>
+        <div class="tl-week">Weeks 3–4</div>
+        <div class="tl-phase">3 Dynamic Engines</div>
+        <div class="tl-desc">Template Builder, Workflow Designer, RBAC Engine — all configurable without code, preview/publish, versioning</div>
+      </div>
+      <div class="tl-card" style="--clr:#10b981;--glow:rgba(16,185,129,0.15);">
+        <div class="tl-dot"></div>
+        <div class="tl-week">Weeks 5–7</div>
+        <div class="tl-phase">Planning + Field App</div>
+        <div class="tl-desc">Audit calendar/Gantt, plan approval, offline PWA, section wizard, evidence capture, live risk score, e-sign</div>
+      </div>
+      <div class="tl-card" style="--clr:#ef4444;--glow:rgba(239,68,68,0.15);">
+        <div class="tl-dot"></div>
+        <div class="tl-week">Weeks 8–10</div>
+        <div class="tl-phase">Compliance + HIA + Pipeline</div>
+        <div class="tl-desc">Observation ageing, rectification, verification workflow, HIA review inbox, portfolio dashboard, pipeline builder</div>
+      </div>
+      <div class="tl-card" style="--clr:#f59e0b;--glow:rgba(245,158,11,0.15);">
+        <div class="tl-dot"></div>
+        <div class="tl-week">Weeks 11–13</div>
+        <div class="tl-phase">Closure, Reports &amp; Platform</div>
+        <div class="tl-desc">Closure certificate (PDF), MIS reports, ad-hoc builder, notifications, task mgmt, company settings, audit log, IP login</div>
+      </div>
+      <div class="tl-card" style="--clr:#06b6d4;--glow:rgba(6,182,212,0.15);">
+        <div class="tl-dot"></div>
+        <div class="tl-week">Weeks 14–16</div>
+        <div class="tl-phase">AI, WhatsApp &amp; Integration</div>
+        <div class="tl-desc">AI anomaly detection, WhatsApp API, evidence repository, MFA/OTP, delegation, end-to-end integration testing</div>
+      </div>
+      <div class="tl-card" style="--clr:#fbbf24;--glow:rgba(251,191,36,0.15);">
+        <div class="tl-dot"></div>
+        <div class="tl-week">Weeks 17–18</div>
+        <div class="tl-phase">UAT, Training &amp; Go-Live</div>
+        <div class="tl-desc">Seed templates loaded, UAT with Bank team, feedback incorporation, admin/user training, production deploy, hyper-care</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== OVERLAY + PANEL ===== -->
+<div class="overlay" id="overlay" onclick="closeDetail()"></div>
+<div class="detail-panel" id="panel">
+  <button class="close-btn" onclick="closeDetail()">&times;</button>
+  <div id="panel-content"></div>
+</div>
+
+<script>
+  (function(){
+    var c = document.getElementById('stars');
+    for(var i=0; i<80; i++){
+      var s = document.createElement('div');
+      s.className = 'star';
+      s.style.cssText = 'left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;width:'+(Math.random()*2+1)+'px;height:'+(Math.random()*2+1)+'px;--dur:'+(Math.random()*4+3)+'s;--delay:'+Math.random()*5+'s;';
+      c.appendChild(s);
+    }
+  })();
+
+  var data = {
+    master:{icon:'📊',title:'Master Data Management',tag:'core',clr:'#3b82f6',desc:'Foundation module storing all reference data. Branch Master, PACS/Mandali Master, Employee/User Master, Financial Year Master, Audit Type Master, Calendar/Holiday Master. Bulk import via Excel for PACS and Users.',feats:['Branch CRUD with region, zone, address, status','PACS Master with linked branch, registration, village','User Master with designation, branch, roles, e-signature','Financial Year + Holiday Master for SLA calculation','Audit Type Master linking templates, workflows, frequency','Bulk Excel import with validation before commit']},
+    template:{icon:'🧩',title:'Template Builder (Dynamic Engine 1)',tag:'engine',clr:'#8b5cf6',desc:'No-code designer where Bank admins create and amend audit formats. Templates are versioned metadata trees (Sections → Fields). The runtime engine renders everything from metadata — no screen is hard-coded.',feats:['Drag-drop section/sub-section tree builder','20+ field types: text, number, currency, date, dropdown, radio, checkbox, grid, file, signature, computed','Visibility rules: show/hide fields based on other field values','Shared Option Lists: edit once, reflect everywhere','Bilingual Value Statements (GU/EN) per field/section','3-level Risk Scoring: answer points + field weights + roll-up','Repeatable grids (e.g. 38 registers checklist)','Template Preview & Test-Fill before publishing','Versioning: Draft → Published → Archived']},
+    planning:{icon:'📅',title:'Audit Planning Module',tag:'planning',clr:'#10b981',desc:'Builds and tracks the annual audit calendar for every branch and PACS. Supports planned and ad-hoc audits with risk-based prioritisation.',feats:['Auto-generate draft annual plan from Master Data + frequency','Calendar (month/quarter) and Gantt timeline views','Risk-based prioritisation: auto-flag high-risk entities','Workload view per Auditor/Branch Manager','Plan approval workflow: Planner → HIA','Plan vs. Actual tracking with variance reporting','Ad-hoc/Surprise Audit creation outside annual plan','Bulk import plan via Excel template']},
+    execution:{icon:'📝',title:'Audit Execution (Field App)',tag:'planning',clr:'#10b981',desc:'The working screen for the person conducting the inspection. Fully template-driven, tablet-friendly, offline-capable. Real-time risk scoring and evidence capture.',feats:['My Assigned Audits worklist with status filters','Dynamic section-by-section wizard from template metadata','Inline evidence capture: photos, scanned documents','Offline mode with encrypted local storage + auto-sync','Live Risk Score Panel: running section-wise and overall score','Auto-save drafts with conflict resolution','Observation promotion: non-compliant → formal Observation','Digital sign-off: role-authenticated e-sign with timestamp','Bilingual toggle (GU/EN) on every screen','PWA: installable on tablet/mobile, offline-ready']},
+    observations:{icon:'⚠️',title:'Observations (Auto-Generated)',tag:'core',clr:'#ef4444',desc:'Non-compliant/deficient answers are auto-promoted to formal Observations with severity, target date, and description. Automatically visible to Compliance module.',feats:['Auto-promotion from non-compliant/deficient answers','Severity tagging: Low / Medium / High / Critical','Target rectification date defined by auditor','Links back to specific field in audit instance','Triggers compliance workflow automatically','Repeat-observation detection across audit cycles']},
+    compliance:{icon:'✅',title:'Compliance Module',tag:'core',clr:'#ef4444',desc:'Digitises the current "Rectified Report" follow-up. Branch/PACS managers submit rectifications with evidence. System tracks ageing with auto-escalation.',feats:['Observation worklist with colour-coded ageing (G/Y/R)','Rectification submission: free-text + evidence upload','Partial (Partially Complied) or Full (Complied) marking','Per-observation verification workflow → auditor/reviewer','Auto-escalation of overdue items to HIA dashboard','Repeat-observation detection flags recurring issues','Compliance history thread per observation','Bulk compliance status reports']},
+    hia:{icon:'📋',title:'HIA Review Module',tag:'core',clr:'#f59e0b',desc:'Head of Internal Audit command centre. Review inbox, approve/return/escalate/override, portfolio dashboards with bank-wide risk picture.',feats:['Review inbox with risk rating, observations, attachments','Actions: Approve, Return for Rework, Escalate, Override Risk','Risk Override with mandatory justification (logged)','Portfolio Dashboard: bank-wide risk heat-map (G/Y/R)','Plan-vs-actual %, average time-to-close, recurring observations','Auditor-wise workload and turnaround time reports','Drill-down from dashboard to underlying audit instance','Reassign audit; initiate special/surprise audit','Annual Plan approval workflow']},
+    closure:{icon:'📜',title:'Audit Closure Module',tag:'core',clr:'#06b6d4',desc:'Formal close of audit cycle. System-numbered Closure Certificate (PDF) with digital signatures. Locked audits. Feeds risk rating into next cycle planning.',feats:['Closure eligibility: approved + material observations compliant','Configurable severity threshold for mandatory compliance','"Accepted Risk" marking by competent authority','System-numbered Closure Certificate (PDF) with e-sign','Closed audits locked from further edits','Permissioned, logged Reopen action for corrections','Feeds entity risk rating into next cycle planning']},
+    reporting:{icon:'📊',title:'Reporting, MIS & Dashboards',tag:'core',clr:'#3b82f6',desc:'Print-ready PDF exports, 5 standard MIS reports, ad-hoc query builder, role-based dashboards — all bilingual (GU/EN).',feats:['Print-ready PDF mirroring original register layout','5 Standard MIS Reports: Plan vs Actual, Observation Register, Risk Trend, Compliance Ageing, Auditor Productivity','Ad-hoc Report/Query Builder with Excel/PDF export','Role-based dashboard widgets (Branch Manager sees own branch)','Dashboard aggregates pre-computed for sub-2-second load','All reports in Gujarati + English']},
+    workflow:{icon:'🔄',title:'Dynamic Workflow Engine',tag:'engine',clr:'#f59e0b',desc:'A single generic configurable state-machine driving ALL approvals: plan approval, audit review, compliance verification. Redesign any sequence from admin without code.',feats:['Ordered list of Stages with roles, actions, SLA, conditions','Conditional routing: high-risk → extra approval stage','Parallel stages: multiple reviewers must sign off','Configurable SLA per stage with reminders + auto-escalation','Working-day based SLA respecting Holiday Master','Delegation & substitution for leave periods','Admin force-reassign any pending workflow task']},
+    rbac:{icon:'🛡️',title:'Dynamic RBAC Engine',tag:'engine',clr:'#8b5cf6',desc:'User → Role(s) → Permission(s) + Data Scope. Granular field-level access. Row-level security at API layer. Admin creates roles via checklist matrix.',feats:['Granular: Module × Screen × Action (View/Create/Edit/Delete/Approve...)','Field-level permission: restrict fields to specific roles','Data Scoping: All, Zone, Branch, Own records only','Scope enforced at API layer — not bypassable','Role-specific landing dashboards and menu layouts','New roles immediately available — no deployment','Segregation of duties: auditor ≠ approver']},
+    documents:{icon:'📁',title:'Document & Evidence Management',tag:'core',clr:'#06b6d4',desc:'Central repository for audit evidence — photos, scanned registers, compliance proofs. Linked to source, versioned, virus-scanned, retention-controlled.',feats:['All evidence linked to Audit Instance / Field / Observation','Versioned storage with metadata (user, date, type, size)','Virus/malware scan on upload','Configurable retention policy per Audit Type','Aligned with Bank\'s record-retention norms','Audit trail of all document access and modifications']},
+    notifications:{icon:'🔔',title:'Notifications & Reminders',tag:'core',clr:'#e11d48',desc:'Cross-cutting notification module. Configurable templates per event, multi-channel delivery, digest summaries for HIA and Planner.',feats:['Configurable templates per event (assigned, submitted, overdue...)','Multi-channel: In-App, Email, SMS','Event-based triggers: plan due, audit assigned, submitted, returned','Digest: daily/weekly for HIA and Planner','All rules editable by Admin without code','Recipient, channel, timing configurable per notification']},
+    auditlog:{icon:'📋',title:'Immutable Audit Log',tag:'core',clr:'#3b82f6',desc:'System-wide activity trail capturing WHO did WHAT on WHICH record, WHEN triggered. Full before/after values. No hard deletes. Fully queryable. The AMS is itself 100% auditable.',feats:['Tracks: Create, Update, Delete, Approve, Override, Config Changes','Full before/after value snapshots per change','Soft-delete with timestamp and user attribution','Queryable by Admin and HIA for internal control','Every workflow action attributed and timestamped','No silent edits — complete transparency']},
+    task:{icon:'✅',title:'Task Management System',tag:'core',clr:'#10b981',desc:'Integrated task manager. Create tasks, assign to users/roles, track status, set deadlines, link dependencies. Automated reminders as deadlines approach.',feats:['Create & assign tasks to any user or role','Status: Pending / In Progress / Completed / On Hold','Priority levels with visual indicators','Task dependency linking (Task B after Task A)','Comments thread and attachments per task','Automated reminders via In-App, Email, SMS, WhatsApp','Bulk assignment and task templates for recurring activities']},
+    pipeline:{icon:'🏗️',title:'Pipeline Builder (Automation Engine)',tag:'advanced',clr:'#06b6d4',desc:'Visual pipeline designer for end-to-end automated workflows. Build steps, set schedules, define triggers. One-time setup auto-runs all year. Missed-step notifications.',feats:['Visual drag-drop step designer','Sequential and parallel step execution','Date/time scheduling per step','Auto-trigger next step or dependent templates','Missed-step → immediate notification to assignee + supervisor','Reminder config: X hours/days before deadline','Escalating reminders (1st assignee → 2nd supervisor → 3rd HIA)','One-time setup auto-generates audit plans, assignments, templates for full FY']},
+    company:{icon:'⚙️',title:'Company Settings (Admin Panel)',tag:'core',clr:'#f59e0b',desc:'Central settings panel for all system-wide configuration. Invoice numbering, document prefixes, letterhead, logo, financial year defaults — all from admin panel.',feats:['Auto-numbering: Audit IDs, Certificate Nos, Observation IDs','Custom prefix/format: e.g. BR-AUD-2026-001','Letterhead and logo upload for PDF certificates','Financial year defaults and working hours','Language, timezone, and regional preferences','Document template management for all outputs']},
+    config:{icon:'🔧',title:'Config Manager & IP Login',tag:'advanced',clr:'#e11d48',desc:'Global configuration for which features trigger when. Enable/disable modules. IP-based login restriction with whitelist per user/role. Auto-logout on IP change.',feats:['Feature toggle: enable/disable any module','Trigger rules: time-based, event-based, threshold-based','All config changes logged in Audit Log','IP whitelist per user/role (branch IPs, HO network)','Auto-logout if IP changes mid-session','Restrict system access to bank network only']},
+    ai:{icon:'🤖',title:'AI Anomaly Detection (#1)',tag:'extra',clr:'#8b5cf6',desc:'ML-powered analytics on audit data. Auto-detect anomalies, outliers, fraud patterns. Predictive risk scoring with trend alerts.',feats:['Auto-flag unusual audit responses, cash mismatches, NPA spikes','ML model learns from historical audit data','Trend-based alerts: deteriorating risk patterns','Fraud indicator flags: correlate multiple risk signals','Predictive risk scoring: forecast next-cycle rating','Dashboard widget: anomaly heat-map','Customisable sensitivity thresholds per audit type']},
+    whatsapp:{icon:'📱',title:'WhatsApp Integration (#2)',tag:'extra',clr:'#10b981',desc:'WhatsApp Business API for real-time notifications and compliance follow-up. Critical for cooperative banking where WhatsApp is primary communication.',feats:['Instant alerts: audit assigned, compliance deadline approaching','Compliance follow-up: observation summaries with direct links','Voice note escalation: HIA → auditor for urgent rework','Auto-generated weekly digest cards (image + text)','Two-way: branch managers query audit status via WhatsApp','End-to-end encrypted, RBI guideline compliant','Delivery & read receipts tracked in notification log']}
+  };
+
+  function show(id){
+    var d = data[id]; if(!d) return;
+    var f = d.feats.map(function(x){return '<li>'+x+'</li>';}).join('');
+    var s=''; if(d.tag==='core'||d.tag==='planning'||d.tag==='extra'||d.tag==='advanced'||d.tag==='engine') {
+      var t = ['core','planning','extra','advanced','engine']; var clrs = ['#3b82f6','#10b981','#8b5cf6','#06b6d4','#f59e0b'];
+      var idx = t.indexOf(d.tag); var c = idx>=0?clrs[idx]:'#3b82f6';
+      s='<span class="mod-tag" style="background:'+c+'20;color:'+c+';border:1px solid '+c+'40;">'+d.tag.toUpperCase()+'</span>';
+    }
+    document.getElementById('panel-content').innerHTML =
+      '<div style="font-size:36px;margin-bottom:8px;">'+d.icon+'</div>'+
+      '<h2 style="color:#f1f5f9;">'+d.title+'</h2>'+
+      s+
+      '<p class="desc">'+d.desc+'</p>'+
+      '<strong style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;">Key Features</strong>'+
+      '<ul class="fl">'+f+'</ul>';
+    document.getElementById('panel').classList.add('active');
+    document.getElementById('overlay').classList.add('active');
+  }
+
+  function closeDetail(){
+    document.getElementById('panel').classList.remove('active');
+    document.getElementById('overlay').classList.remove('active');
+  }
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closeDetail();});
+</script>
+</body>
+</html>

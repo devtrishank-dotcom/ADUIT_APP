@@ -1,0 +1,85 @@
+.ams-layout .ant-layout-sider {
+  background: #141416;
+}
+
+.ams-layout .ant-layout-sider-trigger {
+  background: #1c1c20;
+  color: #a3a3a8;
+  border-top: 1px solid #2a2a2e;
+}
+
+.ams-logo {
+  height: 58px;
+  display: flex;
+  align-items: center;
+  color: #fff;
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 18px;
+  padding: 0 20px;
+  border-bottom: 1px solid #26262a;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.ams-logo-collapsed {
+  justify-content: center;
+  padding: 0;
+}
+
+.ams-logo-icon {
+  color: #ef4b5a;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.ams-logo-text {
+  color: #fff;
+  margin-left: 10px;
+  font-size: 17px;
+}
+
+.ams-logo-accent {
+  color: #ef4b5a;
+}
+
+.ams-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: #141416;
+  border-bottom: 1px solid #2a2a2e;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.ams-content {
+  margin: 22px 26px;
+  min-height: 280px;
+  max-width: 1280px;
+}
+
+@media (max-width: 850px) {
+  .ams-content {
+    margin: 14px;
+  }
+  .ams-header {
+    padding: 0 12px;
+  }
+}
+
+.page-header {
+  margin-bottom: 18px;
+}
+
+.stat-card {
+  border-radius: 13px;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.stat-card:hover {
+  box-shadow: 0 10px 28px rgba(20, 20, 22, 0.1);
+  transform: translateY(-1px);
+}

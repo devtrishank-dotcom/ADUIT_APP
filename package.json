@@ -1,0 +1,15 @@
+{
+  "name": "ams-monorepo",
+  "version": "1.0.0",
+  "description": "Audit Management System (AMS) for DCCB",
+  "scripts": {
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "start:backend": "cd backend && npm run dev",
+    "start:frontend": "cd frontend && npm start",
+    "seed": "cd backend && npm run seed",
+    "seed:demo": "cd backend && npm run seed:demo",
+    "build:frontend": "cd frontend && npm run build",
+    "build:render": "npm ci --prefix backend && npm ci --prefix frontend && npm run build --prefix frontend",
+    "start:render": "node backend/server.js"
+  }
+}

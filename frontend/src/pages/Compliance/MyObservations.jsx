@@ -33,6 +33,7 @@ const statusConfig = {
   PartiallyComplied: { color: 'orange', labelEn: 'Partially Complied', labelGu: 'આંશિક અનુપાલન' },
   Complied: { color: 'green', labelEn: 'Complied', labelGu: 'અનુપાલિત' },
   Verified: { color: 'blue', labelEn: 'Verified', labelGu: 'ચકાસાયેલ' },
+  AcceptedRisk: { color: 'purple', labelEn: 'Accepted Risk', labelGu: 'સ્વીકૃત જોખમ' },
 };
 
 const MyObservations = () => {
@@ -105,13 +106,28 @@ const MyObservations = () => {
     setRespondModalOpen(true);
   };
 
+  const appendUploadedFiles = (files) => {
+    setUploadedFiles((prev) => {
+      const base = Array.isArray(prev) ? prev : prev ? [prev] : [];
+      const incoming = Array.isArray(files) ? files : files ? [files] : [];
+      return [...base, ...incoming];
+    });
+  };
+
   const handleSubmitResponse = async (values) => {
     setActionLoading(true);
     try {
+      const files = Array.isArray(uploadedFiles) ? uploadedFiles : uploadedFiles ? [uploadedFiles] : [];
       const payload = {
         description: values.response,
         actionType: 'Response',
-        attachments: uploadedFiles.map((f) => f.id || f.uid),
+        outcome: values.outcome || 'Complied',
+        evidenceAttachments: files.map((f) => ({
+          fileName: f.name,
+          filePath: f.url || f.id || f.uid,
+          fileType: f.type,
+          fileSize: f.size,
+        })),
         observationId: selectedObs.id,
       };
       await apiFunctions.compliance.submitAction(selectedObs.id, payload);
@@ -127,7 +143,7 @@ const MyObservations = () => {
   };
 
   const getDaysRemaining = (targetDate, status) => {
-    if (status === 'Complied' || status === 'Verified') return null;
+    if (status === 'Complied' || status === 'Verified' || status === 'AcceptedRisk') return null;
     if (!targetDate) return null;
     return dayjs(targetDate).diff(dayjs(), 'day');
   };
@@ -439,9 +455,25 @@ const MyObservations = () => {
               ? 'તમારો પ્રતિભાવ અહીં લખો...'
               : 'Type your response here...'} />
           </Form.Item>
+          <Form.Item
+            name="outcome"
+            label={lang === 'gu' ? 'અનુપાલન સ્થિતિ' : 'Compliance Outcome'}
+            initialValue="Complied"
+            rules={[{
+              required: true,
+              message: lang === 'gu' ? 'સ્થિતિ પસંદ કરો' : 'Outcome is required',
+            }]}
+          >
+            <Select
+              options={[
+                { value: 'Complied', label: lang === 'gu' ? 'સંપૂર્ણ અનુપાલિત' : 'Fully Complied' },
+                { value: 'PartiallyComplied', label: lang === 'gu' ? 'આંશિક અનુપાલિત' : 'Partially Complied' },
+              ]}
+            />
+          </Form.Item>
           <Form.Item label={lang === 'gu' ? 'જોડાણો' : 'Attachments'}>
             <FileUpload
-              onUpload={(files) => setUploadedFiles(files)}
+              onUpload={appendUploadedFiles}
               fileList={uploadedFiles}
               multiple
               maxCount={5}

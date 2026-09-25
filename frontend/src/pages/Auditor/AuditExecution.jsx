@@ -2,11 +2,13 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import {
   Breadcrumb, Layout, Button, Modal, Progress, Tag, Spin,
   Typography, Space, List, Badge, Empty, Steps, Alert, Tooltip, Divider,
+  Card, Form, Input, Select, DatePicker,
 } from 'antd';
 import {
   SaveOutlined, SendOutlined, CheckCircleOutlined,
   ExclamationCircleOutlined, CloseCircleOutlined, MenuFoldOutlined,
   MenuUnfoldOutlined, LeftOutlined, RightOutlined, WifiOutlined,
+  PlusOutlined, WarningOutlined,
 } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -16,9 +18,26 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import FormRenderer from '../../components/common/FormRenderer';
 import RiskScorePanel from '../../components/common/RiskScorePanel';
+import { normalizeTemplate, getFieldNonCompliance } from '../../utils/normalizeTemplate';
 
 const { Title, Text } = Typography;
 const { Sider, Content } = Layout;
+const { TextArea } = Input;
+
+const severityOptions = [
+  { value: 'Low', labelEn: 'Low', labelGu: 'નીચું' },
+  { value: 'Medium', labelEn: 'Medium', labelGu: 'મધ્યમ' },
+  { value: 'High', labelEn: 'High', labelGu: 'ઉચ્ચ' },
+  { value: 'Critical', labelEn: 'Critical', labelGu: 'ગંભીર' },
+];
+
+const observationStatusColor = {
+  Open: 'red',
+  PartiallyComplied: 'orange',
+  Complied: 'green',
+  Verified: 'blue',
+  AcceptedRisk: 'purple',
+};
 
 const sectionStatusIcons = {
   completed: <CheckCircleOutlined style={{ color: '#4a7c59' }} />,
@@ -68,6 +87,10 @@ const AuditExecution = () => {
   const [online, setOnline] = useState(navigator.onLine);
   const debounceRef = useRef(null);
   const currentResponsesRef = useRef({});
+  const [observations, setObservations] = useState([]);
+  const [obsModalOpen, setObsModalOpen] = useState(false);
+  const [obsSubmitting, setObsSubmitting] = useState(false);
+  const [obsForm] = Form.useForm();
 
   useEffect(() => {
     const handleOnline = () => setOnline(true);
@@ -85,18 +108,16 @@ const AuditExecution = () => {
     try {
       const res = await apiFunctions.audit.getForm(auditInstanceId);
       const data = res.data?.data || res.data;
-      setTemplate(data.template);
-      setAuditInstance(data.auditInstance);
+      const normalizedTemplate = normalizeTemplate(data.template, []);
+      setTemplate(normalizedTemplate);
+      setAuditInstance(data.instance || data.auditInstance);
       const respMap = {};
       (data.responses || []).forEach((r) => {
         respMap[r.fieldCode] = r.value;
       });
       setResponses(respMap);
       currentResponsesRef.current = respMap;
-      const sortedSections = (data.template?.sections || []).sort(
-        (a, b) => (a.order || 0) - (b.order || 0)
-      );
-      setSections(sortedSections);
+      setSections(normalizedTemplate?.sections || []);
     } catch {
       message.error(lang === 'gu' ? 'ફોર્મ લોડ કરવામાં નિષ્ફળ' : 'Failed to load form');
       navigate('/auditor');
@@ -114,10 +135,52 @@ const AuditExecution = () => {
     }
   }, [auditInstanceId]);
 
+  const fetchObservations = useCallback(async () => {
+    try {
+      const res = await apiFunctions.compliance.listObservations({ auditInstanceId });
+      setObservations(res.data?.data || res.data || []);
+    } catch {
+      // silent
+    }
+  }, [auditInstanceId]);
+
   useEffect(() => {
     fetchForm();
     fetchRiskScore();
-  }, [fetchForm, fetchRiskScore]);
+    fetchObservations();
+  }, [fetchForm, fetchRiskScore, fetchObservations]);
+
+  const openObsModal = (prefill = null) => {
+    obsForm.resetFields();
+    if (prefill) {
+      obsForm.setFieldsValue(prefill);
+    } else {
+      obsForm.setFieldsValue({ severity: 'Medium', targetDate: dayjs().add(15, 'day') });
+    }
+    setObsModalOpen(true);
+  };
+
+  const handleRaiseObservation = async (values) => {
+    setObsSubmitting(true);
+    try {
+      await apiFunctions.audit.createObservation(auditInstanceId, {
+        fieldCode: values.fieldCode || undefined,
+        sectionCode: values.sectionCode || undefined,
+        title: values.title,
+        description: values.description,
+        severity: values.severity,
+        targetDate: values.targetDate ? values.targetDate.toISOString() : undefined,
+      });
+      message.success(lang === 'gu' ? 'નિરિક્ષણ ઉમેરાયું' : 'Observation raised');
+      setObsModalOpen(false);
+      obsForm.resetFields();
+      fetchObservations();
+    } catch {
+      message.error(lang === 'gu' ? 'નિરિક્ષણ ઉમેરવામાં નિષ્ફળ' : 'Failed to raise observation');
+    } finally {
+      setObsSubmitting(false);
+    }
+  };
 
   const saveResponses = useCallback(async (respMap) => {
     const payload = Object.entries(respMap).map(([fieldCode, value]) => ({
@@ -200,6 +263,33 @@ const AuditExecution = () => {
     return missing;
   }, [sections, responses]);
 
+  const flatFields = useMemo(() => {
+    const normalized = normalizeTemplate(template, []);
+    return (normalized?.sections || []).flatMap((section) =>
+      (section.fields || []).map((field) => ({
+        ...field,
+        sectionCode: section.code,
+        sectionTitle: section.title || section.code,
+      }))
+    );
+  }, [template]);
+
+  const existingFieldCodes = useMemo(
+    () => new Set(observations.map((o) => o.fieldCode).filter(Boolean)),
+    [observations]
+  );
+
+  const detectedIssues = useMemo(
+    () =>
+      flatFields
+        .map((field) => ({
+          field,
+          severity: getFieldNonCompliance(field, responses?.[field.code]),
+        }))
+        .filter((item) => item.severity && !existingFieldCodes.has(item.field.code)),
+    [flatFields, responses, existingFieldCodes]
+  );
+
   const goToSection = (index) => {
     if (index >= 0 && index < sections.length) {
       setActiveSectionIndex(index);
@@ -278,6 +368,71 @@ const AuditExecution = () => {
         }}
       />
     </div>
+  );
+
+  const renderObservationModal = () => (
+    <Modal
+      title={lang === 'gu' ? 'નિરિક્ષણ ઉમેરો' : 'Raise Observation'}
+      open={obsModalOpen}
+      onCancel={() => setObsModalOpen(false)}
+      onOk={() => obsForm.submit()}
+      confirmLoading={obsSubmitting}
+      okText={lang === 'gu' ? 'સાચવો' : 'Save'}
+      cancelText={lang === 'gu' ? 'રદ કરો' : 'Cancel'}
+      width={620}
+    >
+      <Form form={obsForm} layout="vertical" onFinish={handleRaiseObservation}>
+        <Form.Item name="fieldCode" label={lang === 'gu' ? 'સંબંધિત પ્રશ્ન' : 'Linked Question'}>
+          <Select
+            allowClear
+            showSearch
+            optionFilterProp="label"
+            placeholder={lang === 'gu' ? 'પ્રશ્ન પસંદ કરો' : 'Select a question (optional)'}
+            options={flatFields.map((f) => ({
+              value: f.code,
+              label: `${f.sectionTitle} — ${f.label}`,
+            }))}
+            onChange={(val) => {
+              const field = flatFields.find((f) => f.code === val);
+              if (field) {
+                obsForm.setFieldsValue({
+                  sectionCode: field.sectionCode,
+                  title: obsForm.getFieldValue('title') || field.label,
+                });
+              }
+            }}
+          />
+        </Form.Item>
+        <Form.Item name="sectionCode" hidden>
+          <Input />
+        </Form.Item>
+        <Form.Item
+          name="title"
+          label={lang === 'gu' ? 'શીર્ષક' : 'Title'}
+          rules={[{ required: true, message: lang === 'gu' ? 'શીર્ષક જરૂરી છે' : 'Title is required' }]}
+        >
+          <Input />
+        </Form.Item>
+        <Form.Item name="description" label={lang === 'gu' ? 'વર્ણન' : 'Description'}>
+          <TextArea rows={4} />
+        </Form.Item>
+        <Form.Item
+          name="severity"
+          label={lang === 'gu' ? 'ગંભીરતા' : 'Severity'}
+          rules={[{ required: true, message: lang === 'gu' ? 'ગંભીરતા જરૂરી છે' : 'Severity is required' }]}
+        >
+          <Select
+            options={severityOptions.map((s) => ({
+              value: s.value,
+              label: lang === 'gu' ? s.labelGu : s.labelEn,
+            }))}
+          />
+        </Form.Item>
+        <Form.Item name="targetDate" label={lang === 'gu' ? 'લક્ષ્ય તારીખ' : 'Target Date'}>
+          <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+        </Form.Item>
+      </Form>
+    </Modal>
   );
 
   const renderReviewModal = () => (
@@ -469,6 +624,90 @@ const AuditExecution = () => {
         </Content>
       </Layout>
 
+      <Card
+        size="small"
+        style={{ marginTop: 16, border: '1px solid #e7e2dc' }}
+        title={
+          <Space>
+            <WarningOutlined style={{ color: '#d92332' }} />
+            <Text strong>{lang === 'gu' ? 'નિરિક્ષણો' : 'Observations'}</Text>
+            <Badge count={observations.length} size="small" style={{ backgroundColor: '#d92332' }} />
+          </Space>
+        }
+        extra={
+          <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => openObsModal()}>
+            {lang === 'gu' ? 'નિરિક્ષણ ઉમેરો' : 'Raise Observation'}
+          </Button>
+        }
+      >
+        {detectedIssues.length > 0 && (
+          <Alert
+            type="warning"
+            showIcon
+            style={{ marginBottom: 12 }}
+            message={lang === 'gu' ? 'સંભવિત નોન-કમ્પ્લાયન્સ મળ્યું' : 'Potential non-compliance detected'}
+            description={
+              <Space direction="vertical" size={6} style={{ width: '100%' }}>
+                {detectedIssues.map(({ field, severity }) => (
+                  <div
+                    key={field.code}
+                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}
+                  >
+                    <Text style={{ fontSize: 13 }}>
+                      {field.sectionTitle} — {field.label}
+                    </Text>
+                    <Space>
+                      <Tag color={severity === 'High' ? 'red' : 'orange'}>{severity}</Tag>
+                      <Button
+                        size="small"
+                        onClick={() =>
+                          openObsModal({
+                            fieldCode: field.code,
+                            sectionCode: field.sectionCode,
+                            title: field.label,
+                            description: `${lang === 'gu' ? 'અનુપાલન નથી' : 'Non-compliance'}: ${field.label}`,
+                            severity,
+                            targetDate: dayjs().add(15, 'day'),
+                          })
+                        }
+                      >
+                        {lang === 'gu' ? 'ઉમેરો' : 'Raise'}
+                      </Button>
+                    </Space>
+                  </div>
+                ))}
+              </Space>
+            }
+          />
+        )}
+        {observations.length > 0 ? (
+          <List
+            size="small"
+            dataSource={observations}
+            renderItem={(obs) => (
+              <List.Item>
+                <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+                  <Space>
+                    <Text strong>{obs.title}</Text>
+                    <Tag color={observationStatusColor[obs.status] || 'default'}>{obs.status}</Tag>
+                  </Space>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {obs.severity || ''}
+                  </Text>
+                </Space>
+              </List.Item>
+            )}
+          />
+        ) : (
+          detectedIssues.length === 0 && (
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description={lang === 'gu' ? 'કોઈ નિરિક્ષણ નથી' : 'No observations yet'}
+            />
+          )
+        )}
+      </Card>
+
       <div style={{
         marginTop: 16,
         padding: '16px 24px',
@@ -503,6 +742,7 @@ const AuditExecution = () => {
       </div>
 
       {renderReviewModal()}
+      {renderObservationModal()}
     </div>
   );
 };

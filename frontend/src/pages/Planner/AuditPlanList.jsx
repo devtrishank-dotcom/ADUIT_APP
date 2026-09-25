@@ -46,6 +46,7 @@ const AuditPlanList = () => {
   const [years, setYears] = useState([]);
   const [auditTypes, setAuditTypes] = useState([]);
   const [entities, setEntities] = useState([]);
+  const [auditors, setAuditors] = useState([]);
   const [filters, setFilters] = useState({ financialYear: undefined, auditType: undefined });
 
   const [addModalVisible, setAddModalVisible] = useState(false);
@@ -70,8 +71,10 @@ const AuditPlanList = () => {
       const planList = res.data?.data || res.data || [];
       setPlans(planList);
       if (planList.length > 0) {
-        const active = planList.find((p) => p.status === 'Active') || planList[0];
-        setSelectedPlan(active);
+        const preferred = planList.find((p) => p.status === 'Draft')
+          || planList.find((p) => p.status === 'Submitted')
+          || planList[0];
+        setSelectedPlan(preferred);
       }
     } catch {
       message.error(lang === 'gu' ? 'યોજનાઓ લોડ કરવામાં નિષ્ફળ' : 'Failed to load plans');
@@ -115,14 +118,20 @@ const AuditPlanList = () => {
 
   const fetchMasters = useCallback(async () => {
     try {
-      const [fyRes, atRes, branchRes, pacsRes] = await Promise.all([
+      const [fyRes, atRes, branchRes, pacsRes, auditorRes] = await Promise.all([
         apiFunctions.masters.financialYears.list(),
         apiFunctions.masters.auditTypes.list(),
         apiFunctions.masters.branches.list(),
         apiFunctions.masters.pacs.list(),
+        apiFunctions.users.getAuditors().catch(() => ({ data: [] })),
       ]);
       setYears(fyRes.data?.data || fyRes.data || []);
       setAuditTypes(atRes.data?.data || atRes.data || []);
+      const auditorList = auditorRes.data?.data || auditorRes.data || [];
+      setAuditors(auditorList.map((a) => ({
+        value: a.id || a._id,
+        label: a.name || a.employeeCode,
+      })));
       const branchOptions = (branchRes.data?.data || branchRes.data || []).map((branch) => ({
         value: branch.id || branch._id,
         label: `Branch - ${branch.name || branch.code}`,
@@ -191,9 +200,13 @@ const AuditPlanList = () => {
   const handleEditItem = async (values) => {
     try {
       await apiFunctions.planning.plans.items.update(selectedPlan.id, editingItem.id, {
-        ...values,
-        plannedStartDate: values.plannedRange?.[0]?.toISOString(),
-        plannedEndDate: values.plannedRange?.[1]?.toISOString(),
+        auditType: values.auditType,
+        entityType: values.entityType,
+        assignedTo: values.assignedTo || undefined,
+        priority: values.priority,
+        status: values.status,
+        plannedStart: values.plannedRange?.[0]?.toISOString(),
+        plannedEnd: values.plannedRange?.[1]?.toISOString(),
       });
       message.success(lang === 'gu' ? 'આઇટમ અપડેટ થઈ' : 'Item updated');
       setEditModalVisible(false);
@@ -239,9 +252,10 @@ const AuditPlanList = () => {
   const handleReschedule = async (values) => {
     try {
       await apiFunctions.planning.plans.items.update(selectedPlan.id, rescheduleItem.id, {
-        ...rescheduleItem,
-        plannedStartDate: values.plannedRange?.[0]?.toISOString(),
-        plannedEndDate: values.plannedRange?.[1]?.toISOString(),
+        plannedStart: values.plannedRange?.[0]?.toISOString(),
+        plannedEnd: values.plannedRange?.[1]?.toISOString(),
+        status: 'Rescheduled',
+        rescheduleReason: values.rescheduleReason,
       });
       message.success(lang === 'gu' ? 'ફરી શેડ્યૂલ થઈ ગયું' : 'Rescheduled');
       setRescheduleModalVisible(false);
@@ -281,12 +295,22 @@ const AuditPlanList = () => {
   };
 
   const handleSubmitForApproval = async () => {
+    if (!selectedPlan) return;
+    if (selectedPlan.status !== 'Draft') {
+      message.warning(
+        lang === 'gu'
+          ? `ફક્ત Draft યોજના સબમિટ થઈ શકે. આ યોજનાની સ્થિતિ: ${selectedPlan.status}`
+          : `Only Draft plans can be submitted. Current status: ${selectedPlan.status}`
+      );
+      return;
+    }
     try {
       setSubmitLoading(true);
       await apiFunctions.planning.plans.submit(selectedPlan.id);
       message.success(lang === 'gu' ? 'યોજના મંજૂરી માટે સબમિટ થઈ' : 'Plan submitted for approval');
-    } catch {
-      message.error(lang === 'gu' ? 'સબમિટ નિષ્ફળ' : 'Submit failed');
+      await fetchPlans();
+    } catch (err) {
+      message.error(err?.response?.data?.error || (lang === 'gu' ? 'સબમિટ નિષ્ફળ' : 'Submit failed'));
     } finally {
       setSubmitLoading(false);
     }
@@ -388,7 +412,8 @@ const AuditPlanList = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space size="small">
-          {record.status === 'Planned' && record.assignedTo === user?.id && (
+          {record.status === 'Planned'
+            && (canEdit || record.assignedTo === (user?.id || user?._id)) && (
             <Button
               type="link"
               size="small"
@@ -406,7 +431,12 @@ const AuditPlanList = () => {
               onClick={() => {
                 setEditingItem(record);
                 editForm.setFieldsValue({
-                  ...record,
+                  entityName: record.entityName,
+                  entityType: record.entityType,
+                  auditType: record.auditTypeId,
+                  assignedTo: record.assignedTo,
+                  priority: record.priority,
+                  status: record.status,
                   plannedRange: record.plannedStartDate && record.plannedEndDate
                     ? [dayjs(record.plannedStartDate), dayjs(record.plannedEndDate)]
                     : undefined,
@@ -671,7 +701,7 @@ const AuditPlanList = () => {
                 label={lang === 'gu' ? 'ઓડિટ પ્રકાર' : 'Audit Type'}
                 rules={[{ required: true }]}
               >
-                <Select options={auditTypes.map((at) => ({ value: at.code || at.name, label: at.name || at.code }))} />
+                <Select options={auditTypes.map((at) => ({ value: at.id || at._id, label: at.name || at.code }))} />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -679,7 +709,13 @@ const AuditPlanList = () => {
                 name="assignedTo"
                 label={lang === 'gu' ? 'સોંપાયેલ' : 'Assigned To'}
               >
-                <Select placeholder={lang === 'gu' ? 'ઓડિટર પસંદ કરો' : 'Select auditor'} />
+                <Select
+                  allowClear
+                  showSearch
+                  optionFilterProp="label"
+                  placeholder={lang === 'gu' ? 'ઓડિટર પસંદ કરો' : 'Select auditor'}
+                  options={auditors}
+                />
               </Form.Item>
             </Col>
           </Row>
@@ -747,12 +783,18 @@ const AuditPlanList = () => {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="auditType" label={lang === 'gu' ? 'ઓડિટ પ્રકાર' : 'Audit Type'} rules={[{ required: true }]}>
-                <Select options={auditTypes.map((at) => ({ value: at.code || at.name, label: at.name || at.code }))} />
+                <Select options={auditTypes.map((at) => ({ value: at.id || at._id, label: at.name || at.code }))} />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item name="assignedTo" label={lang === 'gu' ? 'સોંપાયેલ' : 'Assigned To'}>
-                <Input />
+                <Select
+                  allowClear
+                  showSearch
+                  optionFilterProp="label"
+                  placeholder={lang === 'gu' ? 'ઓડિટર પસંદ કરો' : 'Select auditor'}
+                  options={auditors}
+                />
               </Form.Item>
             </Col>
           </Row>
@@ -796,6 +838,9 @@ const AuditPlanList = () => {
             rules={[{ required: true }]}
           >
             <DatePicker.RangePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+          </Form.Item>
+          <Form.Item name="rescheduleReason" label={lang === 'gu' ? 'કારણ' : 'Reason'}>
+            <TextArea rows={3} />
           </Form.Item>
         </Form>
       </Modal>

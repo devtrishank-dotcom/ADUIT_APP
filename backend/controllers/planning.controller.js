@@ -1,9 +1,50 @@
+const mongoose = require('mongoose');
 const AuditPlan = require('../models/AuditPlan');
 const AuditPlanItem = require('../models/AuditPlanItem');
 const Branch = require('../models/Branch');
 const PACS = require('../models/PACS');
 const AuditType = require('../models/AuditType');
 const FinancialYear = require('../models/FinancialYear');
+
+const ITEM_FIELDS = [
+  'entityType',
+  'entityId',
+  'periodFrom',
+  'periodTo',
+  'plannedStart',
+  'plannedEnd',
+  'actualStart',
+  'actualEnd',
+  'assignedTo',
+  'priority',
+  'status',
+  'rescheduleReason',
+];
+
+const resolveAuditType = async (value) => {
+  if (!value) return null;
+  if (mongoose.isValidObjectId(value)) return value;
+  const auditType = await AuditType.findOne({ $or: [{ code: value }, { name: value }] });
+  return auditType ? auditType._id : null;
+};
+
+const sanitizePlanItem = async (body = {}) => {
+  const clean = {};
+  ITEM_FIELDS.forEach((key) => {
+    if (body[key] !== undefined) clean[key] = body[key];
+  });
+  if (body.plannedStartDate !== undefined && clean.plannedStart === undefined) {
+    clean.plannedStart = body.plannedStartDate;
+  }
+  if (body.plannedEndDate !== undefined && clean.plannedEnd === undefined) {
+    clean.plannedEnd = body.plannedEndDate;
+  }
+  if (body.auditType !== undefined) {
+    const resolved = await resolveAuditType(body.auditType);
+    if (resolved) clean.auditType = resolved;
+  }
+  return clean;
+};
 
 exports.listPlans = async (req, res) => {
   try {
@@ -172,7 +213,11 @@ exports.listPlanItems = async (req, res) => {
 
 exports.createPlanItem = async (req, res) => {
   try {
-    const item = await AuditPlanItem.create({ ...req.body, plan: req.params.planId });
+    const clean = await sanitizePlanItem(req.body);
+    if (!clean.auditType) {
+      return res.status(400).json({ error: 'A valid auditType is required.' });
+    }
+    const item = await AuditPlanItem.create({ ...clean, plan: req.params.planId });
     res.status(201).json({ data: item });
   } catch (error) {
     console.error('createPlanItem error:', error);
@@ -195,7 +240,12 @@ exports.getPlanItem = async (req, res) => {
 
 exports.updatePlanItem = async (req, res) => {
   try {
-    const item = await AuditPlanItem.findByIdAndUpdate(req.params.itemId, { $set: req.body }, { new: true });
+    const clean = await sanitizePlanItem(req.body);
+    const item = await AuditPlanItem.findByIdAndUpdate(
+      req.params.itemId,
+      { $set: clean },
+      { new: true, runValidators: true }
+    );
     if (!item) return res.status(404).json({ error: 'AuditPlanItem not found.' });
     res.json({ data: item });
   } catch (error) {
@@ -221,7 +271,13 @@ exports.bulkImportItems = async (req, res) => {
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'items must be a non-empty array.' });
     }
-    const planItems = items.map((item) => ({ ...item, plan: req.params.planId }));
+    const planItems = await Promise.all(
+      items.map(async (item) => ({ ...(await sanitizePlanItem(item)), plan: req.params.planId }))
+    );
+    const invalid = planItems.filter((item) => !item.auditType);
+    if (invalid.length > 0) {
+      return res.status(400).json({ error: `${invalid.length} item(s) have an invalid auditType.` });
+    }
     const created = await AuditPlanItem.insertMany(planItems);
     res.status(201).json({ data: created, count: created.length });
   } catch (error) {

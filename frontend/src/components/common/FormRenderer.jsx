@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState } from 'react';
+import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import {
   Collapse, Input, InputNumber, DatePicker, Select, Radio,
   Checkbox, Upload, Button, Tooltip, Tag, Typography, Space, Form, Badge,
@@ -10,6 +10,8 @@ import {
 import dayjs from 'dayjs';
 import GridEditor from './GridEditor';
 import { useLanguage } from '../../context/LanguageContext';
+import apiFunctions from '../../services/api';
+import { normalizeTemplate } from '../../utils/normalizeTemplate';
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -67,6 +69,8 @@ const evaluateVisibility = (visibilityRule, responses) => {
   }
 };
 
+let optionListsCache = null;
+
 const FormRenderer = ({
   template,
   responses = {},
@@ -74,15 +78,43 @@ const FormRenderer = ({
   readOnly = false,
   onChange,
   riskScore,
+  optionLists: propOptionLists,
 }) => {
   const { language: ctxLanguage } = useLanguage();
   const lang = propLanguage || ctxLanguage;
   const [activeKeys, setActiveKeys] = useState([]);
+  const [optionLists, setOptionLists] = useState(propOptionLists || optionListsCache || []);
 
-  const sections = useMemo(() => {
-    if (!template?.sections) return [];
-    return template.sections.sort((a, b) => (a.order || 0) - (b.order || 0));
-  }, [template]);
+  useEffect(() => {
+    if (propOptionLists || optionListsCache) {
+      setOptionLists(propOptionLists || optionListsCache);
+      return undefined;
+    }
+    let mounted = true;
+    apiFunctions.optionLists
+      .list()
+      .then((res) => {
+        const lists = res.data?.data || res.data || [];
+        optionListsCache = lists;
+        if (mounted) setOptionLists(lists);
+      })
+      .catch(() => {
+        // option lists are optional; ignore failures
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [propOptionLists]);
+
+  const normalizedTemplate = useMemo(
+    () => normalizeTemplate(template, optionLists),
+    [template, optionLists]
+  );
+
+  const sections = useMemo(
+    () => normalizedTemplate?.sections || [],
+    [normalizedTemplate]
+  );
 
   const getLabel = useCallback((field) => {
     if (lang === 'gu' && field.labelGu) return field.labelGu;

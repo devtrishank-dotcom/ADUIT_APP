@@ -4,21 +4,21 @@ const AuditInstance = require('../models/AuditInstance');
 
 exports.listObservations = async (req, res) => {
   try {
-    const { entityType, entityId, status, assignedTo, severity, page = 1, limit = 20 } = req.query;
+    const { auditInstanceId, entityType, entityId, status, assignedTo, severity, page = 1, limit = 20 } = req.query;
     const query = {};
 
     if (status) query.status = status;
     if (severity) query.severity = severity;
 
-    if (entityType || entityId) {
+    if (auditInstanceId) {
+      query.auditInstance = auditInstanceId;
+    } else if (entityType || entityId) {
       const auditQuery = {};
       if (entityType) auditQuery.entityType = entityType;
       if (entityId) auditQuery.entityId = entityId;
       const instances = await AuditInstance.find(auditQuery).select('_id');
       query.auditInstance = { $in: instances.map((i) => i._id) };
-    }
-
-    if (assignedTo) {
+    } else if (assignedTo) {
       const instances = await AuditInstance.find({ startedBy: assignedTo }).select('_id');
       query.auditInstance = { $in: instances.map((i) => i._id) };
     }
@@ -63,12 +63,27 @@ exports.getObservationDetail = async (req, res) => {
   }
 };
 
+const normalizeAttachments = (body) => {
+  const raw = body.evidenceAttachments || body.attachments || [];
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(Boolean)
+    .map((a) => (typeof a === 'string' ? { filePath: a } : a));
+};
+
 exports.submitComplianceAction = async (req, res) => {
   try {
     const observation = await Observation.findById(req.params.id);
     if (!observation) return res.status(404).json({ error: 'Observation not found.' });
 
-    const { actionType, description, evidenceAttachments } = req.body;
+    if (!['Open', 'PartiallyComplied'].includes(observation.status)) {
+      return res.status(400).json({ error: 'This observation is not open for a compliance response.' });
+    }
+
+    const { actionType = 'Response', description } = req.body;
+    if (!description) return res.status(400).json({ error: 'Rectification description is required.' });
+
+    const outcome = req.body.outcome === 'Complied' ? 'Complied' : 'PartiallyComplied';
 
     const action = await ComplianceAction.create({
       observation: observation._id,
@@ -77,15 +92,14 @@ exports.submitComplianceAction = async (req, res) => {
       submittedBy: req.user._id,
       submittedAt: new Date(),
       statusBefore: observation.status,
-      evidenceAttachments,
+      statusAfter: outcome,
+      evidenceAttachments: normalizeAttachments(req.body),
     });
 
-    if (actionType === 'Response') {
-      observation.status = 'PartiallyComplied';
-    }
+    observation.status = outcome;
     await observation.save();
 
-    res.status(201).json({ data: action });
+    res.status(201).json({ data: { action, observation } });
   } catch (error) {
     console.error('submitComplianceAction error:', error);
     res.status(500).json({ error: 'Internal server error.' });
@@ -97,23 +111,37 @@ exports.verifyCompliance = async (req, res) => {
     const observation = await Observation.findById(req.params.id);
     if (!observation) return res.status(404).json({ error: 'Observation not found.' });
 
-    const { description, evidenceAttachments } = req.body;
+    const actionType = req.body.actionType || 'Verification';
+    const description = req.body.description;
+    if (!['Verification', 'Rejection', 'AcceptRisk'].includes(actionType)) {
+      return res.status(400).json({ error: 'Invalid action. Use Verification, Rejection or AcceptRisk.' });
+    }
+
+    let statusAfter;
+    if (actionType === 'Verification') statusAfter = 'Verified';
+    else if (actionType === 'Rejection') statusAfter = 'Open';
+    else statusAfter = 'AcceptedRisk';
 
     const action = await ComplianceAction.create({
       observation: observation._id,
-      actionType: 'Verification',
-      description: description || 'Verified compliance action',
+      actionType,
+      description: description
+        || (actionType === 'Rejection'
+          ? 'Compliance response rejected — rectification required.'
+          : actionType === 'AcceptRisk'
+            ? 'Risk consciously accepted by competent authority.'
+            : 'Verified compliance action'),
       submittedBy: req.user._id,
       submittedAt: new Date(),
       statusBefore: observation.status,
-      statusAfter: 'Verified',
-      evidenceAttachments,
+      statusAfter,
+      evidenceAttachments: normalizeAttachments(req.body),
     });
 
-    observation.status = 'Verified';
+    observation.status = statusAfter;
     await observation.save();
 
-    res.status(201).json({ data: action });
+    res.status(201).json({ data: { action, observation } });
   } catch (error) {
     console.error('verifyCompliance error:', error);
     res.status(500).json({ error: 'Internal server error.' });

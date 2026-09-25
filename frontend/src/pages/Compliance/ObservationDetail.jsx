@@ -32,6 +32,7 @@ const statusConfig = {
   PartiallyComplied: { color: 'orange', labelEn: 'Partially Complied', labelGu: 'આંશિક અનુપાલન' },
   Complied: { color: 'green', labelEn: 'Complied', labelGu: 'અનુપાલિત' },
   Verified: { color: 'blue', labelEn: 'Verified', labelGu: 'ચકાસાયેલ' },
+  AcceptedRisk: { color: 'purple', labelEn: 'Accepted Risk', labelGu: 'સ્વીકૃત જોખમ' },
   Rejected: { color: 'red', labelEn: 'Rejected', labelGu: 'નકારેલ' },
 };
 
@@ -40,7 +41,10 @@ const actionTypeConfig = {
   Verification: { color: 'green', labelEn: 'Verification', labelGu: 'ચકાસણી' },
   Escalation: { color: 'red', labelEn: 'Escalation', labelGu: 'એસ્કેલેશન' },
   Rejection: { color: 'volcano', labelEn: 'Rejection', labelGu: 'અસ્વીકાર' },
+  AcceptRisk: { color: 'purple', labelEn: 'Accepted Risk', labelGu: 'સ્વીકૃત જોખમ' },
 };
+
+const VERDICT_ACTIONS = { approve: 'Verification', reject: 'Rejection', acceptRisk: 'AcceptRisk' };
 
 const ObservationDetail = () => {
   const { observationId } = useParams();
@@ -79,13 +83,28 @@ const ObservationDetail = () => {
     fetchObservation();
   }, [fetchObservation]);
 
+  const appendUploadedFiles = (files) => {
+    setUploadedFiles((prev) => {
+      const base = Array.isArray(prev) ? prev : prev ? [prev] : [];
+      const incoming = Array.isArray(files) ? files : files ? [files] : [];
+      return [...base, ...incoming];
+    });
+  };
+
   const handleSubmitResponse = async (values) => {
     setActionLoading(true);
     try {
+      const files = Array.isArray(uploadedFiles) ? uploadedFiles : uploadedFiles ? [uploadedFiles] : [];
       const payload = {
         description: values.response,
         actionType: 'Response',
-        attachments: uploadedFiles.map((f) => f.id || f.uid),
+        outcome: values.outcome || 'Complied',
+        evidenceAttachments: files.map((f) => ({
+          fileName: f.name,
+          filePath: f.url || f.id || f.uid,
+          fileType: f.type,
+          fileSize: f.size,
+        })),
         observationId,
       };
       await apiFunctions.compliance.submitAction(observationId, payload);
@@ -105,7 +124,7 @@ const ObservationDetail = () => {
     setActionLoading(true);
     try {
       const payload = {
-        actionType: values.verdict === 'approve' ? 'Verification' : 'Rejection',
+        actionType: VERDICT_ACTIONS[values.verdict] || 'Verification',
         description: values.comment,
         actionId: selectedAction?.id,
       };
@@ -113,7 +132,9 @@ const ObservationDetail = () => {
       message.success(
         values.verdict === 'approve'
           ? (lang === 'gu' ? 'પ્રતિભાવ ચકાસાયેલ' : 'Response verified')
-          : (lang === 'gu' ? 'પ્રતિભાવ નકારાયેલ' : 'Response rejected'),
+          : values.verdict === 'reject'
+            ? (lang === 'gu' ? 'પ્રતિભાવ નકારાયેલ' : 'Response rejected')
+            : (lang === 'gu' ? 'જોખમ સ્વીકારાયેલ' : 'Risk accepted'),
       );
       setVerifyModalOpen(false);
       verifyForm.resetFields();
@@ -322,15 +343,15 @@ const ObservationDetail = () => {
                         <Paragraph style={{ marginBottom: 8, marginTop: 4 }}>
                           {action.description || action.comment || '-'}
                         </Paragraph>
-                        {action.attachments && action.attachments.length > 0 && (
+                        {(action.evidenceAttachments || action.attachments)?.length > 0 && (
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                            {action.attachments.map((att, i) => (
+                            {(action.evidenceAttachments || action.attachments).map((att, i) => (
                               <Button
                                 key={i}
                                 type="link"
                                 size="small"
                                 icon={<PaperClipOutlined />}
-                                href={att.url}
+                                href={att.url || att.filePath}
                                 target="_blank"
                               >
                                 {att.name || att.fileName || `File ${i + 1}`}
@@ -340,8 +361,7 @@ const ObservationDetail = () => {
                         )}
                         {canVerify
                           && action.actionType === 'Response'
-                          && observation.status !== 'Verified'
-                          && observation.status !== 'Complied' && (
+                          && ['Complied', 'PartiallyComplied'].includes(observation.status) && (
                           <Button
                             type="link"
                             size="small"
@@ -439,9 +459,25 @@ const ObservationDetail = () => {
               ? 'તમારો પ્રતિભાવ અહીં લખો...'
               : 'Type your response here...'} />
           </Form.Item>
+          <Form.Item
+            name="outcome"
+            label={lang === 'gu' ? 'અનુપાલન સ્થિતિ' : 'Compliance Outcome'}
+            initialValue="Complied"
+            rules={[{
+              required: true,
+              message: lang === 'gu' ? 'સ્થિતિ પસંદ કરો' : 'Outcome is required',
+            }]}
+          >
+            <Select
+              options={[
+                { value: 'Complied', label: lang === 'gu' ? 'સંપૂર્ણ અનુપાલિત' : 'Fully Complied' },
+                { value: 'PartiallyComplied', label: lang === 'gu' ? 'આંશિક અનુપાલિત' : 'Partially Complied' },
+              ]}
+            />
+          </Form.Item>
           <Form.Item label={lang === 'gu' ? 'જોડાણો' : 'Attachments'}>
             <FileUpload
-              onUpload={(files) => setUploadedFiles(files)}
+              onUpload={appendUploadedFiles}
               fileList={uploadedFiles}
               multiple
               maxCount={5}
@@ -480,8 +516,9 @@ const ObservationDetail = () => {
           >
             <Select
               options={[
-                { value: 'approve', label: lang === 'gu' ? 'મંજૂર કરો' : 'Approve' },
-                { value: 'reject', label: lang === 'gu' ? 'નકારો' : 'Reject' },
+                { value: 'approve', label: lang === 'gu' ? 'મંજૂર કરો (ચકાસાયેલ)' : 'Approve (Verified)' },
+                { value: 'reject', label: lang === 'gu' ? 'નકારો (ફરી પ્રતિભાવ જરૂરી)' : 'Reject (Rework)' },
+                { value: 'acceptRisk', label: lang === 'gu' ? 'જોખમ સ્વીકારો' : 'Accept Risk' },
               ]}
             />
           </Form.Item>

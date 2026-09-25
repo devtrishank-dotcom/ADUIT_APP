@@ -5,7 +5,7 @@ const complianceActionSchema = new mongoose.Schema(
     observation: { type: mongoose.Schema.Types.ObjectId, ref: 'Observation', required: true },
     actionType: {
       type: String,
-      enum: ['Response', 'Verification', 'Escalation'],
+      enum: ['Response', 'Verification', 'Rejection', 'Escalation', 'AcceptRisk'],
       required: true,
     },
     description: { type: String },

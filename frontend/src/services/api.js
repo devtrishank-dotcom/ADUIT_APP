@@ -222,7 +222,7 @@ const apiFunctions = {
     listObservations: (params) => api.get('/compliance/observations', { params }),
     getObservation: (id) => api.get(`/compliance/observations/${id}`),
     submitAction: (id, data) => api.post(`/compliance/observations/${id}/actions`, data),
-    verify: (id) => api.post(`/compliance/observations/${id}/verify`),
+    verify: (id, data) => api.post(`/compliance/observations/${id}/verify`, data),
     getAgeing: () => api.get('/compliance/observations/ageing'),
   },
   closure: {

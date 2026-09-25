@@ -21,6 +21,16 @@ const DEMO_USERS = [
   { employeeCode: 'EMP006', password: 'comp123', label: 'Compliance', color: 'green' },
 ];
 
+const BRANCH_COUNT = 5;
+const BRANCH_DEMO_USERS = Array.from({ length: BRANCH_COUNT }).flatMap((_, idx) => {
+  const seq = String(idx + 1).padStart(3, '0');
+  return [
+    { employeeCode: `AUD${seq}`, password: 'auditor123', label: `AUD-${seq}`, color: 'blue' },
+    { employeeCode: `BM${seq}`, password: 'bm123', label: `BM-${seq}`, color: 'purple' },
+    { employeeCode: `CO${seq}`, password: 'comp123', label: `CO-${seq}`, color: 'green' },
+  ];
+});
+
 const Login = () => {
   const { login, isAuthenticated, loading: authLoading } = useAuth();
   const { t, language, toggleLanguage } = useLanguage();
@@ -166,6 +176,38 @@ const Login = () => {
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
             {DEMO_USERS.map((demoUser) => (
+              <Tooltip
+                key={demoUser.employeeCode}
+                title={`${demoUser.employeeCode} / ${demoUser.password}`}
+              >
+                <span
+                  className="login-demo-chip"
+                  onClick={() => handleDemoLogin(demoUser)}
+                >
+                  <LoginOutlined style={{ marginRight: 5 }} />
+                  {demoUser.label}
+                </span>
+              </Tooltip>
+            ))}
+          </div>
+
+          <Text type="secondary" style={{ fontSize: 12, textAlign: 'center', display: 'block' }}>
+            {language === 'gu'
+              ? 'શાખા યુઝર્સ: AUD-001.. / BM-001.. / CO-001..'
+              : 'Branch users: AUD-001.. / BM-001.. / CO-001..'}
+          </Text>
+
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 6,
+              justifyContent: 'center',
+              maxHeight: 104,
+              overflowY: 'auto',
+            }}
+          >
+            {BRANCH_DEMO_USERS.map((demoUser) => (
               <Tooltip
                 key={demoUser.employeeCode}
                 title={`${demoUser.employeeCode} / ${demoUser.password}`}

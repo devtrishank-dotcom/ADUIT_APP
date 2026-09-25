@@ -8,7 +8,8 @@
     "dev": "nodemon server.js",
     "seed": "node seeds/seed-runner.js",
     "seed:demo": "node seeds/demo-data.seed.js",
-    "seed:gst": "node seeds/add-gst-fields.seed.js"
+    "seed:gst": "node seeds/add-gst-fields.seed.js",
+    "seed:branch-users": "node seeds/add-branch-users.seed.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

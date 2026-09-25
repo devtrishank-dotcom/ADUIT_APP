@@ -11,6 +11,8 @@ const generateToken = (user) => {
   );
 };
 
+const isActive = (status) => String(status || '').trim().toLowerCase() === 'active';
+
 const sanitizeUser = (user) => ({
   id: user._id,
   name: user.name,
@@ -40,7 +42,7 @@ exports.login = async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials.' });
     }
 
-    if (user.status !== 'active') {
+    if (!isActive(user.status)) {
       return res.status(401).json({ error: 'Account is inactive. Contact your administrator.' });
     }
 
@@ -84,7 +86,7 @@ exports.refresh = async (req, res) => {
       return res.status(401).json({ error: 'Invalid refresh token.' });
     }
 
-    if (user.status !== 'active') {
+    if (!isActive(user.status)) {
       return res.status(401).json({ error: 'Account is inactive.' });
     }
 

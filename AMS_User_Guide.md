@@ -36,6 +36,16 @@ DCCB · Branch Audit & PACS/Mandali Audit
 | Branch Manager | `EMP005` | `bm123` |
 | Compliance Owner | `EMP006` | `comp123` |
 
+### Branch users (one set per branch)
+
+| Role | Employee Codes | Password |
+|---|---|---|
+| Auditor | `AUD001` … `AUD005` | `auditor123` |
+| Branch Manager | `BM001` … `BM005` | `bm123` |
+| Compliance Owner | `CO001` … `CO005` | `comp123` |
+
+Each number maps to a branch (001 = first branch). These users are also available as quick-login chips on the login screen.
+
 ---
 
 ## 2. Administrator Guide

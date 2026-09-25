@@ -143,6 +143,8 @@ Roles × granular permissions × data scope (All / Zone / Branch / PACS / Own). 
 | Branch Manager | `EMP005` | `bm123` |
 | Compliance Owner | `EMP006` | `comp123` |
 
+**Branch-level users** (one set per branch): **Auditor** `AUD001`… (`auditor123`) · **Branch Manager** `BM001`… (`bm123`) · **Compliance Owner** `CO001`… (`comp123`). All are one-click logins on the login screen.
+
 **Suggested demo path:** Planner creates & submits a plan → HIA approves → Auditor fills an audit & raises observations → Compliance responds → HIA verifies → Closure certificate generated.
 
 ---

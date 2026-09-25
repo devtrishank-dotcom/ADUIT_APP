@@ -223,6 +223,39 @@ const Login = () => {
             ))}
           </div>
 
+          <div
+            style={{
+              display: 'flex',
+              gap: 8,
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              borderTop: '1px solid #eef2f7',
+              paddingTop: 14,
+            }}
+          >
+            <Button
+              type="link"
+              size="small"
+              href="/AMS_Flow_Presentation.html"
+              target="_blank"
+              rel="noreferrer"
+              style={{ padding: 0 }}
+            >
+              {language === 'gu' ? 'પ્રેઝન્ટેશન જુઓ' : 'View Presentation'}
+            </Button>
+            <Divider type="vertical" style={{ margin: 0 }} />
+            <Button
+              type="link"
+              size="small"
+              href="/AMS_User_Guide.html"
+              target="_blank"
+              rel="noreferrer"
+              style={{ padding: 0 }}
+            >
+              {language === 'gu' ? 'યુઝર ગાઈડ' : 'User Guide'}
+            </Button>
+          </div>
+
           <div style={{ textAlign: 'center' }}>
             <Text type="secondary" style={{ fontSize: 11 }}>
               {language === 'gu'

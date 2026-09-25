@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AMS - Audit Management System | Flow Presentation | DCCB</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root {
+    --primary: #1a3a5c;
+    --primary-light: #2a5a8c;
+    --accent: #e8a020;
+    --accent-dark: #c48818;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --purple: #8b5cf6;
+    --bg: #f8fafc;
+    --white: #ffffff;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --border: #e2e8f0;
+    --shadow: 0 4px 24px rgba(0,0,0,0.06);
+    --shadow-lg: 0 12px 48px rgba(0,0,0,0.12);
+    --radius: 14px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .slide {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: var(--white);
+    padding: 56px 64px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .slide:last-child { border-bottom: none; }
+
+  .slide-num {
+    position: absolute;
+    top: 24px;
+    right: 40px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .kicker {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent-dark);
+    background: rgba(232,160,32,0.12);
+    padding: 6px 14px;
+    border-radius: 999px;
+    margin-bottom: 16px;
+  }
+
+  h1 { font-size: 44px; font-weight: 900; line-height: 1.1; letter-spacing: -1px; color: var(--primary); }
+  h2 { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; color: var(--primary); margin-bottom: 8px; }
+  h3 { font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+  p { color: var(--text); }
+  .lead { font-size: 18px; color: var(--text-secondary); margin-top: 12px; max-width: 820px; }
+
+  /* Cover */
+  .cover {
+    background: linear-gradient(135deg, #0f2740 0%, #1a3a5c 55%, #2a5a8c 100%);
+    color: #fff;
+    padding: 90px 64px;
+    text-align: center;
+  }
+  .cover h1 { color: #fff; font-size: 52px; }
+  .cover .logo-mark {
+    width: 74px; height: 74px; border-radius: 20px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 38px; font-weight: 900; color: #1a3a5c;
+    margin: 0 auto 28px;
+  }
+  .cover p { color: rgba(255,255,255,0.82); font-size: 19px; margin-top: 16px; }
+  .cover .meta { margin-top: 36px; font-size: 14px; color: rgba(255,255,255,0.65); letter-spacing: 1px; }
+  .cover .pills { margin-top: 28px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .cover .pills span {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 600;
+  }
+
+  /* Grid cards */
+  .grid { display: grid; gap: 18px; margin-top: 28px; }
+  .grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    box-shadow: var(--shadow);
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .card .icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 12px;
+    background: rgba(26,58,92,0.08);
+  }
+  .card p { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
+
+  /* Flow */
+  .flow { margin-top: 32px; }
+  .flow-step {
+    display: flex; gap: 20px; align-items: flex-start;
+    padding: 20px 22px; border-radius: var(--radius);
+    border: 1px solid var(--border); background: var(--white);
+    margin-bottom: 14px; box-shadow: var(--shadow);
+  }
+  .flow-step .num {
+    flex-shrink: 0;
+    width: 46px; height: 46px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 18px; color: #fff;
+  }
+  .step-1 .num { background: var(--primary); }
+  .step-2 .num { background: var(--accent); color: #1a3a5c; }
+  .step-3 .num { background: var(--danger); }
+  .step-4 .num { background: var(--purple); }
+  .step-5 .num { background: var(--success); }
+  .flow-step .body { flex: 1; }
+  .flow-step .who {
+    display: inline-block; font-size: 12px; font-weight: 700;
+    color: var(--primary-light); text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .flow-step ul { margin: 8px 0 0 18px; }
+  .flow-step li { font-size: 14px; color: var(--text-secondary); margin-bottom: 3px; }
+
+  .arrow { text-align: center; font-size: 22px; color: var(--border); margin: -6px 0 6px; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; margin-top: 24px; font-size: 14px; }
+  th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  th { background: #f1f5f9; font-weight: 700; color: var(--primary); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+  tr:hover td { background: #fafcff; }
+
+  .tag {
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    font-size: 11px; font-weight: 700;
+  }
+  .tag.green { background: rgba(16,185,129,0.14); color: #047857; }
+  .tag.red { background: rgba(239,68,68,0.14); color: #b91c1c; }
+  .tag.amber { background: rgba(245,158,11,0.16); color: #b45309; }
+  .tag.blue { background: rgba(42,90,140,0.12); color: #1a3a5c; }
+  .tag.purple { background: rgba(139,92,246,0.14); color: #6d28d9; }
+
+  .callout {
+    border-left: 4px solid var(--accent);
+    background: rgba(232,160,32,0.08);
+    padding: 18px 22px; border-radius: 0 var(--radius) var(--radius) 0;
+    margin-top: 24px;
+  }
+  .callout strong { color: var(--primary); }
+
+  ul.checklist { list-style: none; margin-top: 18px; }
+  ul.checklist li { position: relative; padding-left: 30px; margin-bottom: 10px; font-size: 15px; }
+  ul.checklist li::before {
+    content: '\2713'; position: absolute; left: 0; top: 0;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--success); color: #fff; font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 24px; }
+
+  footer {
+    text-align: center; padding: 40px 20px 60px;
+    color: var(--text-secondary); font-size: 13px;
+  }
+
+  @media print {
+    body { background: #fff; }
+    .slide { border: none; page-break-after: always; padding: 40px; }
+    .card, .flow-step { box-shadow: none; }
+  }
+  @media (max-width: 760px) {
+    .slide { padding: 36px 24px; }
+    .grid.cols-2, .grid.cols-3, .grid.cols-4, .two-col { grid-template-columns: 1fr; }
+    h1 { font-size: 32px; } .cover h1 { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<section class="slide cover">
+  <div class="logo-mark">A</div>
+  <h1>Audit Management System</h1>
+  <p>Digital platform for Branch Audit &amp; PACS/Mandali Audit<br>Planning &rarr; Execution &rarr; Compliance &rarr; Review &rarr; Closure</p>
+  <div class="pills">
+    <span>Configuration over Code</span>
+    <span>Dynamic Templates</span>
+    <span>Dynamic Workflow</span>
+    <span>Dynamic RBAC</span>
+    <span>Bilingual (Gujarati / English)</span>
+  </div>
+  <div class="meta">DISTRICT CENTRAL CO-OPERATIVE BANK (DCCB) &nbsp;|&nbsp; SOFTWARE FLOW PRESENTATION</div>
+</section>
+
+<!-- 1. OVERVIEW -->
+<section class="slide">
+  <span class="slide-num">01</span>
+  <span class="kicker">Overview</span>
+  <h2>One platform for every audit type</h2>
+  <p class="lead">AMS digitises the Bank's entire internal inspection lifecycle and replaces paper registers, fixed printed questions and manual follow-up with a single configurable platform.</p>
+  <div class="grid cols-2">
+    <div class="card">
+      <div class="icon">🏦</div>
+      <h3>Branch Audit</h3>
+      <p>Internal inspection of the Bank's own branches &mdash; Accounts &amp; Loan departments, registers, staff conduct, HO circular compliance and profitability.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🤝</div>
+      <h3>PACS / Mandali Audit</h3>
+      <p>Inspection of Primary Agricultural Co-operative Societies by the linked Branch Manager &mdash; membership, share capital, loans, committee, registers and financial soundness.</p>
+    </div>
+  </div>
+  <div class="callout">
+    <strong>Core idea:</strong> Branch Audit and PACS Audit are not separate modules in code &mdash; they are two configurations of one metadata-driven audit engine. New audit types (IS Audit, Concurrent Audit, Statutory Audit tracking) can be added later without a single line of code.
+  </div>
+</section>
+
+<!-- 2. ROLES -->
+<section class="slide">
+  <span class="slide-num">02</span>
+  <span class="kicker">People</span>
+  <h2>Who does what</h2>
+  <table>
+    <thead>
+      <tr><th>Role</th><th>Responsibility in AMS</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>System Administrator</strong></td><td>Configures templates, dropdowns, risk scoring, value statements, workflows, roles/permissions and masters.</td></tr>
+      <tr><td><strong>Head of Internal Audit (HIA)</strong></td><td>Approves the annual plan, reviews submitted audits, overrides risk ratings with justification, approves closure, views bank-wide dashboards.</td></tr>
+      <tr><td><strong>Audit Planner</strong></td><td>Builds the annual audit calendar, assigns auditors, tracks plan vs. actual.</td></tr>
+      <tr><td><strong>Auditor</strong></td><td>Executes the Branch Audit checklist at assigned branches and submits for review.</td></tr>
+      <tr><td><strong>Branch Manager</strong></td><td>Executes PACS/Mandali audits for societies linked to the branch.</td></tr>
+      <tr><td><strong>Compliance Owner</strong></td><td>Responds to observations with rectification evidence and tracks outstanding paras.</td></tr>
+      <tr><td><strong>Board / Management</strong></td><td>Read-only consolidated dashboards, closure certificates and MIS.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 3. END TO END FLOW -->
+<section class="slide">
+  <span class="slide-num">03</span>
+  <span class="kicker">End-to-End Lifecycle</span>
+  <h2>The complete audit flow</h2>
+  <div class="flow">
+    <div class="flow-step step-1">
+      <div class="num">1</div>
+      <div class="body">
+        <span class="who">Audit Planner &rarr; HIA</span>
+        <h3>Planning</h3>
+        <ul>
+          <li>Create the annual plan for the financial year (one plan per FY).</li>
+          <li>Auto-generate line items for every active branch and PACS, or add items manually.</li>
+          <li>Assign auditor / branch manager, period and planned dates; risk-based priority.</li>
+          <li>Submit the plan for approval &rarr; HIA approves.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="arrow">&darr;</div>
+    <div class="flow-step step-2">
+      <div class="num">2</div>
+      <div class="body">
+        <span class="who">Auditor / Branch Manager</span>
+        <h3>Audit Execution</h3>
+        <ul>
+          <li>Start an audit from the plan &mdash; a checklist is generated from the published template.</li>
+          <li>Fill section-by-section (text, dropdown, Yes/No, grids, registers checklist) with guidance shown inline.</li>
+          <li>Attach evidence (photos / scans) and see live risk scoring.</li>
+          <li>Raise observations for non-compliance (auto-detected or manual).</li>
+          <li>Digitally sign and submit for review.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="arrow">&darr;</div>
+    <div class="flow-step step-3">
+      <div class="num">3</div>
+      <div class="body">
+        <span class="who">Compliance Owner &harr; Auditor / HIA</span>
+        <h3>Compliance Tracking</h3>
+        <ul>
+          <li>Compliance owner sees all open observations with severity, target date and ageing.</li>
+          <li>Submits rectification with evidence &mdash; marks <span class="tag green">Fully Complied</span> or <span class="tag amber">Partially Complied</span>.</li>
+          <li>Auditor / HIA verifies: <span class="tag green">Approve &rarr; Verified</span>, <span class="tag red">Reject &rarr; back to Open</span>, or <span class="tag purple">Accept Risk</span>.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="arrow">&darr;</div>
+    <div class="flow-step step-4">
+      <div class="num">4</div>
+      <div class="body">
+        <span class="who">Head of Internal Audit</span>
+        <h3>HIA Review</h3>
+        <ul>
+          <li>Review inbox of submitted audits with computed risk rating and key observations.</li>
+          <li>Approve, Return for rework, Escalate, or Override the risk rating with mandatory justification.</li>
+          <li>Bank-wide portfolio heat-map, plan vs. actual, ageing and productivity dashboards.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="arrow">&darr;</div>
+    <div class="flow-step step-5">
+      <div class="num">5</div>
+      <div class="body">
+        <span class="who">HIA</span>
+        <h3>Audit Closure</h3>
+        <ul>
+          <li>Once the audit is approved and all observations are Verified / Accepted Risk, it becomes closure-ready.</li>
+          <li>Generate a system-numbered <strong>Closure Certificate</strong> (PDF) with digital sign-off and timestamps.</li>
+          <li>Closed audits are locked; corrections go through a permissioned, logged Reopen.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. MODULES -->
+<section class="slide">
+  <span class="slide-num">04</span>
+  <span class="kicker">Modules</span>
+  <h2>What the system contains</h2>
+  <div class="grid cols-3">
+    <div class="card"><div class="icon">🗂️</div><h3>Master Data</h3><p>Branches, PACS, users, financial years, audit types, calendars.</p></div>
+    <div class="card"><div class="icon">🧩</div><h3>Template Builder</h3><p>No-code designer for sections, fields, dropdowns, grids and registers checklists.</p></div>
+    <div class="card"><div class="icon">📅</div><h3>Audit Planning</h3><p>Annual calendar, auto-generate, assignments, plan vs. actual tracking.</p></div>
+    <div class="card"><div class="icon">📝</div><h3>Audit Execution</h3><p>Dynamic form fill, offline-capable, evidence upload, live risk score.</p></div>
+    <div class="card"><div class="icon">✅</div><h3>Compliance</h3><p>Observation worklist, rectification thread, ageing and escalation.</p></div>
+    <div class="card"><div class="icon">🛡️</div><h3>HIA Review</h3><p>Approvals, returns, risk override, portfolio dashboards.</p></div>
+    <div class="card"><div class="icon">🔒</div><h3>Audit Closure</h3><p>Closure certificates, locked archive, controlled reopen.</p></div>
+    <div class="card"><div class="icon">🔔</div><h3>Notifications</h3><p>In-app / email / SMS alerts for assignments, due dates and actions.</p></div>
+    <div class="card"><div class="icon">📊</div><h3>Reports &amp; MIS</h3><p>Plan vs. actual, observation register, risk trend, ageing, exports.</p></div>
+  </div>
+</section>
+
+<!-- 5. DYNAMIC ENGINES -->
+<section class="slide">
+  <span class="slide-num">05</span>
+  <span class="kicker">The Engines</span>
+  <h2>Configuration over Code</h2>
+  <p class="lead">Three generic engines power everything. The Bank changes behaviour through admin screens &mdash; never through a code release.</p>
+  <div class="grid cols-3">
+    <div class="card">
+      <div class="icon">🧩</div>
+      <h3>Template Engine</h3>
+      <p>Sections, sub-sections, fields (15 types), dropdown option lists, risk weights &amp; scoring bands, bilingual value statements, repeatable grids &mdash; all data-driven. Templates are versioned so historical audits re-render exactly as answered.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🔀</div>
+      <h3>Workflow Engine</h3>
+      <p>One state machine for plan approval, audit review and per-observation verification. Stages define actor, allowed actions, SLA, reminders, escalation and conditional routing (e.g. high-risk needs extra sign-off).</p>
+    </div>
+    <div class="card">
+      <div class="icon">🔑</div>
+      <h3>RBAC Engine</h3>
+      <p>Roles &times; granular permissions &times; data scope (All / Zone / Branch / PACS / Own). Enforced at the API layer, not just the UI. New roles and field-level restrictions are created in minutes.</p>
+    </div>
+  </div>
+  <div class="callout">
+    <strong>Result:</strong> adding a new question, changing a dropdown, inserting a review stage or creating a brand-new audit type is a configuration exercise, not a development project.
+  </div>
+</section>
+
+<!-- 6. COMPLIANCE DETAIL -->
+<section class="slide">
+  <span class="slide-num">06</span>
+  <span class="kicker">Deep Dive</span>
+  <h2>Observation &amp; Compliance lifecycle</h2>
+  <table>
+    <thead><tr><th>Stage</th><th>Actor</th><th>What happens</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>1. Raise</td><td>Auditor</td><td>Non-compliant answer promoted to an observation with severity &amp; target date</td><td><span class="tag red">Open</span></td></tr>
+      <tr><td>2. Respond</td><td>Compliance Owner</td><td>Rectification description + evidence submitted</td><td><span class="tag amber">Partially Complied</span> / <span class="tag green">Complied</span></td></tr>
+      <tr><td>3. Verify</td><td>Auditor / HIA</td><td>Approve the response, reject it (back to owner), or accept the risk</td><td><span class="tag green">Verified</span> / <span class="tag red">Open</span> / <span class="tag purple">Accepted Risk</span></td></tr>
+      <tr><td>4. Close</td><td>HIA</td><td>When all observations are resolved, the audit is closure-ready</td><td><span class="tag blue">Closed</span></td></tr>
+    </tbody>
+  </table>
+  <div class="two-col">
+    <div>
+      <h3>Ageing &amp; escalation</h3>
+      <p style="font-size:14px;color:var(--text-secondary)">Overdue observations are colour-coded by ageing and auto-escalated per SLA, appearing on the HIA escalation dashboard.</p>
+    </div>
+    <div>
+      <h3>Recurrence tracking</h3>
+      <p style="font-size:14px;color:var(--text-secondary)">An observation that also appeared in the entity's previous audit is flagged for HIA attention.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 7. SECURITY -->
+<section class="slide">
+  <span class="slide-num">07</span>
+  <span class="kicker">Trust</span>
+  <h2>Security &amp; auditability</h2>
+  <ul class="checklist">
+    <li>Role-based authentication with strong password policy; optional MFA/OTP for sensitive actions.</li>
+    <li>Server-side enforcement of RBAC and data scope on every API call.</li>
+    <li>Immutable activity log of every create / update / approve / override / configuration change.</li>
+    <li>Versioned templates &mdash; a closed audit always re-renders with the rules in force when answered.</li>
+    <li>Segregation of duties &mdash; the executor cannot approve their own audit.</li>
+    <li>Encryption in transit; soft-deletes only, with full history retained.</li>
+  </ul>
+</section>
+
+<!-- 8. TECH STACK -->
+<section class="slide">
+  <span class="slide-num">08</span>
+  <span class="kicker">Technology</span>
+  <h2>Built on a proven stack</h2>
+  <div class="grid cols-2">
+    <div class="card"><div class="icon">⚛️</div><h3>Frontend</h3><p>React 18, Ant Design 5, Recharts &mdash; responsive console + tablet-friendly field app, bilingual UI.</p></div>
+    <div class="card"><div class="icon">🟢</div><h3>Backend</h3><p>Node.js + Express REST API, modular by domain (Auth, RBAC, Template, Planning, Execution, Workflow, Compliance, Reporting).</p></div>
+    <div class="card"><div class="icon">🍃</div><h3>Database</h3><p>MongoDB (Mongoose) &mdash; flexible metadata + transactional data, hosted on MongoDB Atlas.</p></div>
+    <div class="card"><div class="icon">☁️</div><h3>Deployment</h3><p>Render web service serving the API and the production React build from one URL. Auto-deploy on push.</p></div>
+  </div>
+</section>
+
+<!-- 9. DEMO -->
+<section class="slide">
+  <span class="slide-num">09</span>
+  <span class="kicker">Try it</span>
+  <h2>Demo logins</h2>
+  <table>
+    <thead><tr><th>Role</th><th>Employee Code</th><th>Password</th></tr></thead>
+    <tbody>
+      <tr><td>System Administrator</td><td><code>EMP001</code></td><td><code>admin123</code></td></tr>
+      <tr><td>Head of Internal Audit (HIA)</td><td><code>EMP002</code></td><td><code>hia123</code></td></tr>
+      <tr><td>Audit Planner</td><td><code>EMP003</code></td><td><code>planner123</code></td></tr>
+      <tr><td>Auditor</td><td><code>EMP004</code></td><td><code>auditor123</code></td></tr>
+      <tr><td>Branch Manager</td><td><code>EMP005</code></td><td><code>bm123</code></td></tr>
+      <tr><td>Compliance Owner</td><td><code>EMP006</code></td><td><code>comp123</code></td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:14px;color:var(--text-secondary);font-size:14px">
+    Branch-level users are also available, one set per branch:
+    <strong>Auditor</strong> <code>AUD001</code>… (auditor123) ·
+    <strong>Branch Manager</strong> <code>BM001</code>… (bm123) ·
+    <strong>Compliance Owner</strong> <code>CO001</code>… (comp123).
+    All are one-click logins on the login screen.
+  </p>
+  <div class="callout"><strong>Suggested demo path:</strong> Planner creates &amp; submits a plan &rarr; HIA approves &rarr; Auditor fills an audit &amp; raises observations &rarr; Compliance responds &rarr; HIA verifies &rarr; Closure certificate generated.</div>
+</section>
+
+<footer>
+  Audit Management System (AMS) &mdash; Flow Presentation<br>
+  Prepared for DCCB &middot; Confidential
+</footer>
+
+</body>
+</html>

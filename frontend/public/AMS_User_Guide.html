@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AMS - Audit Management System | User Guide | DCCB</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap');
+  :root {
+    --primary: #1a3a5c; --primary-light: #2a5a8c; --accent: #e8a020; --accent-dark: #c48818;
+    --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --purple: #8b5cf6;
+    --bg: #f8fafc; --white: #fff; --text: #1e293b; --text-secondary: #64748b;
+    --border: #e2e8f0; --shadow: 0 4px 24px rgba(0,0,0,.06); --radius: 14px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.65; }
+  .wrap { max-width: 1000px; margin: 0 auto; background: var(--white); padding: 0 0 60px; }
+  header.hero {
+    background: linear-gradient(135deg, #0f2740, #1a3a5c 60%, #2a5a8c); color: #fff;
+    padding: 60px 64px;
+  }
+  header.hero .logo-mark {
+    width: 60px; height: 60px; border-radius: 16px; background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 900; color: #1a3a5c; margin-bottom: 20px;
+  }
+  header.hero h1 { font-size: 38px; font-weight: 900; letter-spacing: -1px; }
+  header.hero p { color: rgba(255,255,255,.8); margin-top: 10px; font-size: 17px; }
+
+  section { padding: 40px 64px 8px; }
+  h2 { font-size: 26px; font-weight: 800; color: var(--primary); margin-bottom: 6px; letter-spacing: -.4px; }
+  h3 { font-size: 18px; font-weight: 700; color: var(--primary); margin: 22px 0 8px; }
+  p { color: var(--text); }
+  .muted { color: var(--text-secondary); }
+  .kicker { display:inline-block; font-size:11px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:var(--accent-dark); background:rgba(232,160,32,.12); padding:5px 12px; border-radius:999px; margin-bottom:12px; }
+
+  .step {
+    display: flex; gap: 16px; padding: 16px 18px; border: 1px solid var(--border);
+    border-radius: 12px; margin: 12px 0; background: var(--white); box-shadow: var(--shadow);
+  }
+  .step .n {
+    flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%;
+    background: var(--primary); color: #fff; font-weight: 800; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step .b { flex: 1; }
+  .step .b strong { color: var(--primary); }
+
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 11px 13px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: #f1f5f9; font-weight: 700; color: var(--primary); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+  code { background: #f1f5f9; padding: 2px 6px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #b91c1c; }
+
+  .tag { display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; }
+  .tag.green { background: rgba(16,185,129,.14); color:#047857; }
+  .tag.red { background: rgba(239,68,68,.14); color:#b91c1c; }
+  .tag.amber { background: rgba(245,158,11,.16); color:#b45309; }
+  .tag.blue { background: rgba(42,90,140,.12); color:#1a3a5c; }
+  .tag.purple { background: rgba(139,92,246,.14); color:#6d28d9; }
+
+  .callout { border-left: 4px solid var(--accent); background: rgba(232,160,32,.08); padding: 16px 20px; border-radius: 0 12px 12px 0; margin: 18px 0; }
+  .callout.tip { border-color: var(--success); background: rgba(16,185,129,.08); }
+  .callout.warn { border-color: var(--danger); background: rgba(239,68,68,.07); }
+
+  .toc { columns: 2; column-gap: 40px; margin-top: 18px; }
+  .toc a { display:block; color: var(--primary-light); text-decoration:none; padding:6px 0; font-size:14px; border-bottom:1px dashed var(--border); }
+  .toc a:hover { color: var(--accent-dark); }
+
+  footer { text-align:center; padding: 40px 20px 20px; color: var(--text-secondary); font-size: 13px; }
+
+  @media print { body{background:#fff;} .step{box-shadow:none;} header.hero{padding:40px;} section{padding:24px 40px;} }
+  @media (max-width:760px){ header.hero{padding:40px 24px;} section{padding:28px 24px 8px;} .toc{columns:1;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="logo-mark">A</div>
+  <h1>AMS User Guide</h1>
+  <p>Audit Management System — step-by-step guide for every role and module<br>DCCB · Branch Audit &amp; PACS/Mandali Audit</p>
+</header>
+
+<section>
+  <span class="kicker">Contents</span>
+  <h2>What's inside</h2>
+  <div class="toc">
+    <a href="#start">1. Getting Started</a>
+    <a href="#admin">2. Administrator Guide</a>
+    <a href="#planner">3. Audit Planner Guide</a>
+    <a href="#auditor">4. Auditor / Branch Manager Guide</a>
+    <a href="#compliance">5. Compliance Owner Guide</a>
+    <a href="#hia">6. HIA Review Guide</a>
+    <a href="#closure">7. Audit Closure Guide</a>
+    <a href="#reports">8. Reports &amp; MIS</a>
+    <a href="#faq">9. Troubleshooting / FAQ</a>
+  </div>
+</section>
+
+<!-- 1 -->
+<section id="start">
+  <span class="kicker">Basics</span>
+  <h2>1. Getting Started</h2>
+  <div class="step"><div class="n">1</div><div class="b"><strong>Log in</strong> with your Employee Code and password at the login screen.</div></div>
+  <div class="step"><div class="n">2</div><div class="b"><strong>Switch language</strong> using the globe icon in the header — the entire UI supports <strong>Gujarati / English</strong>.</div></div>
+  <div class="step"><div class="n">3</div><div class="b"><strong>Dashboard</strong> shows your role-specific widgets. The left menu only shows modules your role can access.</div></div>
+  <div class="step"><div class="n">4</div><div class="b"><strong>Notifications</strong> bell shows assignments, due dates and approvals. Click an item to jump to it.</div></div>
+
+  <h3>Demo logins</h3>
+  <table>
+    <thead><tr><th>Role</th><th>Employee Code</th><th>Password</th></tr></thead>
+    <tbody>
+      <tr><td>System Administrator</td><td><code>EMP001</code></td><td><code>admin123</code></td></tr>
+      <tr><td>HIA</td><td><code>EMP002</code></td><td><code>hia123</code></td></tr>
+      <tr><td>Audit Planner</td><td><code>EMP003</code></td><td><code>planner123</code></td></tr>
+      <tr><td>Auditor</td><td><code>EMP004</code></td><td><code>auditor123</code></td></tr>
+      <tr><td>Branch Manager</td><td><code>EMP005</code></td><td><code>bm123</code></td></tr>
+      <tr><td>Compliance Owner</td><td><code>EMP006</code></td><td><code>comp123</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Branch users (one set per branch)</h3>
+  <table>
+    <thead><tr><th>Role</th><th>Employee Codes</th><th>Password</th></tr></thead>
+    <tbody>
+      <tr><td>Auditor</td><td><code>AUD001</code> … <code>AUD005</code></td><td><code>auditor123</code></td></tr>
+      <tr><td>Branch Manager</td><td><code>BM001</code> … <code>BM005</code></td><td><code>bm123</code></td></tr>
+      <tr><td>Compliance Owner</td><td><code>CO001</code> … <code>CO005</code></td><td><code>comp123</code></td></tr>
+    </tbody>
+  </table>
+  <p class="muted">Each number maps to a branch (001 = first branch, and so on). These users are also available as quick-login chips on the login screen.</p>
+</section>
+
+<!-- 2 -->
+<section id="admin">
+  <span class="kicker">Admin</span>
+  <h2>2. Administrator Guide</h2>
+
+  <h3>2.1 Master Data</h3>
+  <p class="muted">Menu: <strong>Admin → Masters</strong>. Manage Branches, PACS, Financial Years and Audit Types. Keep statuses active/inactive accurate — planning and auto-generate use only active records.</p>
+
+  <h3>2.2 Template Builder (no-code audit formats)</h3>
+  <div class="step"><div class="n">1</div><div class="b">Go to <strong>Admin → Templates → New Template</strong>, pick the Audit Type, save.</div></div>
+  <div class="step"><div class="n">2</div><div class="b">Open the <strong>Template Builder</strong>. Add <strong>sections</strong> and <strong>fields</strong> (15 types: text, number, currency, %, date, dropdown, Yes/No, grid, file, signature…).</div></div>
+  <div class="step"><div class="n">3</div><div class="b">For dropdowns, bind a shared <strong>Option List</strong> (e.g. Compliance Status: Complied / Partially Complied / Not Complied / Not Applicable).</div></div>
+  <div class="step"><div class="n">4</div><div class="b">Mark fields <strong>Mandatory</strong>, add <strong>visibility rules</strong> (show field only if another = a value), and attach <strong>Value Statements</strong> (guidance text, bilingual).</div></div>
+  <div class="step"><div class="n">5</div><div class="b">Set <strong>Risk Scoring</strong>: field weight + points per option + scoring bands.</div></div>
+  <div class="step"><div class="n">6</div><div class="b">Use <strong>Registers Checklist</strong> grids to reproduce the 20 Accounts registers / 18 Loan registers / PACS register list.</div></div>
+  <div class="step"><div class="n">7</div><div class="b">Click <strong>Publish</strong>. New audits use the new version; in-progress/closed audits keep their old version.</div></div>
+
+  <h3>2.3 Option Lists, Value Statements &amp; Risk Config</h3>
+  <p class="muted">Edit shared dropdowns, bilingual guidance statements and risk bands under their respective Admin menu items. Changes apply to new template versions.</p>
+
+  <h3>2.4 Workflows</h3>
+  <p class="muted">Menu: <strong>Admin → Workflows</strong>. Add / reorder stages, set the actor role, allowed actions, SLA and conditional routing (e.g. only for High risk).</p>
+
+  <h3>2.5 Roles &amp; Permissions (RBAC)</h3>
+  <div class="step"><div class="n">1</div><div class="b"><strong>Admin → Roles</strong> → New Role, name it.</div></div>
+  <div class="step"><div class="n">2</div><div class="b">Tick permissions in the module × action matrix (view / create / edit / approve / export…).</div></div>
+  <div class="step"><div class="n">3</div><div class="b">Set the <strong>Data Scope</strong> (All / Zone / Branch / PACS / Own). Save — immediately assignable, no deployment.</div></div>
+
+  <h3>2.6 Users &amp; Notifications</h3>
+  <p class="muted">Menu: <strong>Admin → Users</strong> to create users and assign roles. <strong>Admin → Notifications</strong> to edit notification templates (recipients, channel, timing).</p>
+</section>
+
+<!-- 3 -->
+<section id="planner">
+  <span class="kicker">Planning</span>
+  <h2>3. Audit Planner Guide</h2>
+  <div class="step"><div class="n">1</div><div class="b"><strong>Create the annual plan:</strong> Planning → <strong>New Plan</strong> → choose Financial Year.</div></div>
+  <div class="step"><div class="n">2</div><div class="b"><strong>Auto-generate</strong> creates one item per active branch (Branch Audit) and per active PACS (PACS Audit).</div></div>
+  <div class="step"><div class="n">3</div><div class="b">Or <strong>Add Item</strong> manually: entity, audit type, assigned auditor, priority, audit period, planned dates.</div></div>
+  <div class="step"><div class="n">4</div><div class="b"><strong>Edit</strong> (pencil) or <strong>Reschedule</strong> (calendar) an item; reschedule captures a reason and marks status <span class="tag amber">Rescheduled</span>.</div></div>
+  <div class="step"><div class="n">5</div><div class="b"><strong>Start</strong> an item to create the audit instance and hand it to the auditor.</div></div>
+  <div class="step"><div class="n">6</div><div class="b"><strong>Submit for Approval</strong> (only <span class="tag blue">Draft</span> plans) → HIA approves from the plan approval inbox.</div></div>
+  <div class="callout tip"><strong>Tip:</strong> only Draft plans can be submitted. If submit is blocked, check the plan's status shown in the selector.</div>
+</section>
+
+<!-- 4 -->
+<section id="auditor">
+  <span class="kicker">Execution</span>
+  <h2>4. Auditor / Branch Manager Guide</h2>
+  <div class="step"><div class="n">1</div><div class="b">Open <strong>My Audits</strong> — filter by status (Not Started / In Progress / Submitted / Returned / Approved / Closed).</div></div>
+  <div class="step"><div class="n">2</div><div class="b">Open an audit to see the <strong>section wizard</strong>. Fill each section; mandatory fields are marked with <span style="color:#ef4444">*</span>.</div></div>
+  <div class="step"><div class="n">3</div><div class="b">Answers <strong>auto-save</strong>; use <strong>Save &amp; Continue</strong> to save manually. Evidence files can be attached per question.</div></div>
+  <div class="step"><div class="n">4</div><div class="b">Watch the <strong>Risk Score panel</strong> update live as you answer.</div></div>
+  <div class="step"><div class="n">5</div><div class="b"><strong>Raise Observation:</strong> the Observations panel auto-detects non-compliant answers (Not Complied / Partially Complied) — click <strong>Raise</strong>, or use <strong>Raise Observation</strong> for a manual one. Add title, severity and target date.</div></div>
+  <div class="step"><div class="n">6</div><div class="b"><strong>Review &amp; Submit</strong> — fix any missing mandatory fields, then submit for review.</div></div>
+  <div class="callout"><strong>Digital sign-off:</strong> the sign-off section replaces the paper "Inspecting Officer's Signature" with a role-authenticated action and timestamp.</div>
+</section>
+
+<!-- 5 -->
+<section id="compliance">
+  <span class="kicker">Compliance</span>
+  <h2>5. Compliance Owner Guide</h2>
+  <div class="step"><div class="n">1</div><div class="b">Open <strong>Compliance → My Observations</strong>. Each row shows severity, target date and days remaining (overdue rows are highlighted).</div></div>
+  <div class="step"><div class="n">2</div><div class="b">Click <strong>Respond</strong> (or open the observation).</div></div>
+  <div class="step"><div class="n">3</div><div class="b">Enter your rectification <strong>response</strong>, attach <strong>evidence</strong>, and choose the <strong>outcome</strong>: Fully Complied or Partially Complied.</div></div>
+  <div class="step"><div class="n">4</div><div class="b">Submit. The observation status becomes <span class="tag green">Complied</span> or <span class="tag amber">Partially Complied</span> and awaits verification.</div></div>
+  <div class="step"><div class="n">5</div><div class="b">If the auditor/HIA <strong>rejects</strong> the response, the observation returns to <span class="tag red">Open</span> and you can respond again.</div></div>
+  <div class="callout tip"><strong>Tip:</strong> the observation detail page shows the full compliance thread (responses, verifications, rejections) with dates and authors.</div>
+</section>
+
+<!-- 6 -->
+<section id="hia">
+  <span class="kicker">Review</span>
+  <h2>6. HIA Review Guide</h2>
+  <div class="step"><div class="n">1</div><div class="b">Open <strong>HIA Review</strong> — submitted audits are listed with their computed risk rating.</div></div>
+  <div class="step"><div class="n">2</div><div class="b">Open an audit to view all sections, scores, observations and attachments.</div></div>
+  <div class="step"><div class="n">3</div><div class="b">Take action: <strong>Approve</strong>, <strong>Return for Rework</strong> (with comments), or <strong>Escalate</strong>. Risk <strong>override</strong> requires a justification note (logged).</div></div>
+  <div class="step"><div class="n">4</div><div class="b"><strong>Verify compliance:</strong> in an observation, approve the response → <span class="tag green">Verified</span>, reject → back to <span class="tag red">Open</span>, or <span class="tag purple">Accept Risk</span>.</div></div>
+  <div class="step"><div class="n">5</div><div class="b">Use the <strong>portfolio dashboard</strong> for bank-wide heat-map, plan vs. actual, ageing and productivity; drill down to any audit.</div></div>
+</section>
+
+<!-- 7 -->
+<section id="closure">
+  <span class="kicker">Closure</span>
+  <h2>7. Audit Closure Guide</h2>
+  <div class="step"><div class="n">1</div><div class="b">Open <strong>Closure</strong> — audits that are Approved with all observations Verified / Accepted Risk appear in the ready list.</div></div>
+  <div class="step"><div class="n">2</div><div class="b">Click <strong>Generate</strong> to produce a system-numbered <strong>Closure Certificate</strong> (PDF) with digital signatures/timestamps.</div></div>
+  <div class="step"><div class="n">3</div><div class="b">Closed audits are <strong>locked</strong>. To correct something, use the permissioned <strong>Reopen</strong> action (logged in the activity trail).</div></div>
+  <div class="callout warn"><strong>Note:</strong> an audit cannot be closed until every observation is Verified or consciously marked Accepted Risk.</div>
+</section>
+
+<!-- 8 -->
+<section id="reports">
+  <span class="kicker">MIS</span>
+  <h2>8. Reports &amp; MIS</h2>
+  <table>
+    <thead><tr><th>Report</th><th>What it shows</th></tr></thead>
+    <tbody>
+      <tr><td>Plan vs. Actual</td><td>Planned vs. completed audits and variance.</td></tr>
+      <tr><td>Observation Register</td><td>All observations with status and ageing.</td></tr>
+      <tr><td>Risk Trend</td><td>Risk rating movement per entity over time.</td></tr>
+      <tr><td>Compliance Ageing</td><td>Outstanding paras bucketed by age (0-7 / 8-15 / 16-30 / 30+ days).</td></tr>
+      <tr><td>Auditor Productivity</td><td>Audits completed and turnaround per auditor.</td></tr>
+      <tr><td>Branch / PACS History</td><td>Audit history and closure status per entity.</td></tr>
+    </tbody>
+  </table>
+  <p class="muted">Reports support Excel / PDF export. Access is limited by your role's data scope.</p>
+</section>
+
+<!-- 9 -->
+<section id="faq">
+  <span class="kicker">Help</span>
+  <h2>9. Troubleshooting / FAQ</h2>
+  <h3>I cannot see a menu item</h3>
+  <p class="muted">Menus are derived from your role's permissions. Ask the Administrator to grant the module's View permission.</p>
+  <h3>"Only Draft plans can be submitted"</h3>
+  <p class="muted">The selected plan is already Submitted/Approved. Create a new plan or select a Draft one.</p>
+  <h3>The form fields are not editable / not saving</h3>
+  <p class="muted">The audit may be Submitted or Closed (read-only). Only In Progress / Returned audits can be edited.</p>
+  <h3>An observation does not appear for the Compliance Owner</h3>
+  <p class="muted">The observation must be raised on a submitted audit, and the user's data scope must include that branch/PACS.</p>
+  <h3>Session logged out automatically</h3>
+  <p class="muted">Tokens expire for security. Log in again; if it persists, contact the Administrator.</p>
+</section>
+
+<footer>
+  Audit Management System (AMS) — User Guide · Prepared for DCCB · Confidential
+</footer>
+
+</div>
+</body>
+</html>

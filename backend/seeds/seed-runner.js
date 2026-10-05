@@ -19,6 +19,8 @@ const NotificationTemplate = require('../models/NotificationTemplate');
 
 const createBranchAuditTemplate = require('./branch-audit-template.seed');
 const createPacsAuditTemplate = require('./pacs-audit-template.seed');
+const createMandaliDaftarTemplate = require('./mandali-daftar-template.seed');
+const createInspectionMemoTemplate = require('./inspection-memo-template.seed');
 
 const DROP_EXISTING = process.env.SEED_DROP_DATA === 'true';
 
@@ -166,7 +168,17 @@ async function seed() {
       name: 'PACS Audit',
       defaultFrequency: 'Annual',
     });
-    console.log('  Created 2 AuditTypes.');
+    const mandaliDaftarAuditType = await AuditType.create({
+      code: 'MANDALI_DAFTAR_TAPASANI',
+      name: 'Mandali Daftar Tapasani Yadi',
+      defaultFrequency: 'Annual',
+    });
+    const inspectionMemoAuditType = await AuditType.create({
+      code: 'INTERNAL_INSPECTION_MEMO',
+      name: 'Internal Inspection Memo',
+      defaultFrequency: 'HalfYearly',
+    });
+    console.log('  Created 4 AuditTypes.');
 
     // 7. Create WorkflowDefinitions
     console.log('Creating WorkflowDefinitions...');
@@ -193,8 +205,30 @@ async function seed() {
           { sequence: 2, name: 'Approved', actorRole: 'HIA', actionsAllowed: [], slaHours: 0 },
         ],
       },
+      {
+        auditType: mandaliDaftarAuditType._id,
+        version: 1,
+        status: 'Published',
+        subjectType: 'AuditInstance',
+        stages: [
+          { sequence: 0, name: 'Auditor Submission', actorRole: 'Auditor', actionsAllowed: ['submit'], slaHours: 48 },
+          { sequence: 1, name: 'HIA Review', actorRole: 'HIA', actionsAllowed: ['approve', 'return'], slaHours: 72 },
+          { sequence: 2, name: 'Approved', actorRole: 'HIA', actionsAllowed: [], slaHours: 0 },
+        ],
+      },
+      {
+        auditType: inspectionMemoAuditType._id,
+        version: 1,
+        status: 'Published',
+        subjectType: 'AuditInstance',
+        stages: [
+          { sequence: 0, name: 'Auditor Submission', actorRole: 'Auditor', actionsAllowed: ['submit'], slaHours: 48 },
+          { sequence: 1, name: 'HIA Review', actorRole: 'HIA', actionsAllowed: ['approve', 'return'], slaHours: 72 },
+          { sequence: 2, name: 'Approved', actorRole: 'HIA', actionsAllowed: [], slaHours: 0 },
+        ],
+      },
     ]);
-    console.log('  Created 2 WorkflowDefinitions.');
+    console.log('  Created 4 WorkflowDefinitions.');
 
     // 8. Create seed templates (OptionList OL_COMPLIANCE_STATUS, then templates)
     console.log('Creating seed templates...');
@@ -211,6 +245,8 @@ async function seed() {
     });
     await createBranchAuditTemplate(branchAuditType);
     await createPacsAuditTemplate(pacsAuditType);
+    await createMandaliDaftarTemplate(mandaliDaftarAuditType);
+    await createInspectionMemoTemplate(inspectionMemoAuditType);
     console.log('  Seed templates created.');
 
     // 9. Create Users

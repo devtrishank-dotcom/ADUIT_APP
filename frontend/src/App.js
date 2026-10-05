@@ -35,6 +35,8 @@ const HIAAuditReview = lazy(() => import('./pages/HIA/HIAAuditReview'));
 const MyObservations = lazy(() => import('./pages/Compliance/MyObservations'));
 const ObservationDetail = lazy(() => import('./pages/Compliance/ObservationDetail'));
 
+const MyMandali = lazy(() => import('./pages/BranchManager/MyMandali'));
+
 const ClosureList = lazy(() => import('./pages/Closure/ClosureList'));
 const ClosureCertificate = lazy(() => import('./pages/Closure/ClosureCertificate'));
 
@@ -108,6 +110,11 @@ function App() {
             <Route path="/compliance" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
               <Route index element={<MyObservations />} />
               <Route path=":observationId" element={<ObservationDetail />} />
+            </Route>
+
+            {/* Branch Manager */}
+            <Route path="/branch-manager" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+              <Route path="mandali" element={<MyMandali />} />
             </Route>
 
             {/* Closure */}

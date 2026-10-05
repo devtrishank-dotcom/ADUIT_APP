@@ -8,7 +8,7 @@ import {
   BellOutlined, UserOutlined, LogoutOutlined, GlobalOutlined,
   FileTextOutlined, DatabaseOutlined, TeamOutlined, SafetyOutlined,
   UnorderedListOutlined, FileProtectOutlined, AlertOutlined,
-  NodeIndexOutlined, NotificationOutlined,
+  NodeIndexOutlined, NotificationOutlined, BankOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useAuth } from '../../context/AuthContext';
@@ -21,8 +21,8 @@ const { Text } = Typography;
 
 const LogoIcon = ({ collapsed }) => (
   <div className={`ams-logo ${collapsed ? 'ams-logo-collapsed' : ''}`}>
-    <span className="ams-logo-icon">A</span>
-    {!collapsed && <span className="ams-logo-text">DCCB <span className="ams-logo-accent">AMS</span></span>}
+    <img src="/JDCC-Logo.png" alt="JJS Bank" style={{ height: 32, marginRight: 8 }} />
+    {!collapsed && <span className="ams-logo-text">JJS Bank <span className="ams-logo-accent">AMS</span></span>}
   </div>
 );
 
@@ -30,7 +30,7 @@ const DashboardLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const { user, logout, hasRole } = useAuth();
+  const { user, logout, hasRole, hasPermission, canViewReport } = useAuth();
   const { language, toggleLanguage, t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
@@ -129,6 +129,21 @@ const DashboardLayout = () => {
   const isBranchMgr = hasRole('BRANCH MANAGER');
   const isCompliance = hasRole('COMPLIANCE OWNER');
 
+  // Report submenu entries the current role is allowed to open (Role Master gate).
+  const REPORT_MENU = [
+    { report: 'planVsActual', key: '/reports?report=planVsActual', icon: <CalendarOutlined />, label: 'Plan vs Actual' },
+    { report: 'observationRegister', key: '/reports?report=observationRegister', icon: <FileTextOutlined />, label: 'Observation Register' },
+    { report: 'riskTrend', key: '/reports?report=riskTrend', icon: <BarChartOutlined />, label: 'Risk Trend' },
+    { report: 'complianceAgeing', key: '/reports?report=complianceAgeing', icon: <CheckCircleOutlined />, label: 'Compliance Ageing' },
+    { report: 'auditorDashboard', key: '/reports?report=auditorProductivity', icon: <TeamOutlined />, label: 'Auditor Productivity' },
+    { report: 'auditRegister', key: '/reports?report=branchAuditHistory', icon: <DatabaseOutlined />, label: 'Branch Audit History' },
+  ];
+
+  const visibleReportMenu = REPORT_MENU
+    .filter((item) => canViewReport(item.report))
+    .filter((item) => (item.report !== 'auditRegister' || hasPermission('audit', 'view')))
+    .map(({ report, ...rest }) => rest);
+
   const menuItems = [
     {
       key: '/dashboard',
@@ -156,10 +171,15 @@ const DashboardLayout = () => {
       icon: <CalendarOutlined />,
       label: t('planning', 'Planning'),
     }] : []),
-    ...(isAdmin || isAuditor ? [{
+    ...(isAdmin || isAuditor || isBranchMgr ? [{
       key: '/auditor',
       icon: <AuditOutlined />,
       label: t('myAudits', 'My Audits'),
+    }] : []),
+    ...(isAdmin || isBranchMgr ? [{
+      key: '/branch-manager/mandali',
+      icon: <BankOutlined />,
+      label: t('myMandali', 'My Mandali'),
     }] : []),
     ...(isAdmin || isHIA ? [{
       key: '/hia',
@@ -176,19 +196,12 @@ const DashboardLayout = () => {
       icon: <LockOutlined />,
       label: t('closure', 'Closure'),
     }] : []),
-    {
+    ...(visibleReportMenu.length ? [{
       key: '/reports-group',
       icon: <BarChartOutlined />,
       label: t('reports', 'Reports'),
-      children: [
-        { key: '/reports?report=planVsActual', icon: <CalendarOutlined />, label: 'Plan vs Actual' },
-        { key: '/reports?report=observationRegister', icon: <FileTextOutlined />, label: 'Observation Register' },
-        { key: '/reports?report=riskTrend', icon: <BarChartOutlined />, label: 'Risk Trend' },
-        { key: '/reports?report=complianceAgeing', icon: <CheckCircleOutlined />, label: 'Compliance Ageing' },
-        { key: '/reports?report=auditorProductivity', icon: <TeamOutlined />, label: 'Auditor Productivity' },
-        { key: '/reports?report=branchAuditHistory', icon: <DatabaseOutlined />, label: 'Branch Audit History' },
-      ],
-    },
+      children: visibleReportMenu,
+    }] : []),
     {
       key: '/notifications',
       icon: <BellOutlined />,
@@ -278,7 +291,7 @@ const DashboardLayout = () => {
             />
             {!isMobile && (
               <Text strong className="ams-header-title">
-                {t('appTitle', 'AMS - Audit Management System')}
+                {t('appTitle', 'JJS Bank AMS - Audit Management System')}
               </Text>
             )}
           </Space>

@@ -7,9 +7,18 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "seed": "node seeds/seed-runner.js",
+    "seed:real": "node seeds/real-data.seed.js",
     "seed:demo": "node seeds/demo-data.seed.js",
     "seed:gst": "node seeds/add-gst-fields.seed.js",
-    "seed:branch-users": "node seeds/add-branch-users.seed.js"
+    "seed:branch-users": "node seeds/add-branch-users.seed.js",
+    "seed:inspection": "node seeds/add-inspection-templates.seed.js",
+    "seed:inspection-forms": "node seeds/add-inspection-demo-forms.seed.js",
+    "seed:role-users": "node seeds/demo-role-users.seed.js",
+    "seed:master-data": "node seeds/demo-master-data.seed.js",
+    "seed:audit-instances": "node seeds/demo-audit-instances.seed.js",
+    "seed:auditor-work": "node seeds/demo-auditor-work.seed.js",
+    "seed:report-access": "node seeds/set-report-access.seed.js",
+    "seed:demo-full": "npm run seed && npm run seed:master-data && npm run seed:role-users && npm run seed:audit-instances && npm run seed:auditor-work && npm run seed:report-access"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

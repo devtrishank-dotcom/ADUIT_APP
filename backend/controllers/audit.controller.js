@@ -12,7 +12,10 @@ const WorkflowTransitionLog = require('../models/WorkflowTransitionLog');
 const WorkflowDefinition = require('../models/WorkflowDefinition');
 const RiskConfig = require('../models/RiskConfig');
 const Attachment = require('../models/Attachment');
-const { applyDataScope } = require('../middleware/rbac');
+// Data-scope filtering is handled inline in listInstances (it has to resolve
+// Branch/Zone rules down to entity ids), so applyDataScope is not needed here.
+const PACS = require('../models/PACS');
+const Branch = require('../models/Branch');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -68,7 +71,36 @@ exports.listInstances = async (req, res) => {
     if (auditType) query = query.where('auditType').equals(auditType);
 
     if (req.dataScope) {
-      query = applyDataScope(query, req.dataScope);
+      const scope = req.dataScope;
+
+      if (scope.scopeType === 'Own') {
+        query = query.where('startedBy').equals(scope.scopeValue || req.user._id);
+      } else if (scope.scopeType !== 'All') {
+        // AuditInstance has no branch column, so resolve the visible
+        // Branch / PACS ids from the scope rule and filter on entity.
+        const branchIds = [];
+        const pacsIds = [];
+
+        if (scope.scopeType === 'Branch') {
+          if (scope.scopeValue) branchIds.push(scope.scopeValue);
+          else if (req.user.branch) branchIds.push(req.user.branch);
+        } else if (scope.scopeType === 'Zone') {
+          const branches = await Branch.find(
+            scope.scopeValue ? { zone: scope.scopeValue } : {}
+          ).select('_id');
+          branchIds.push(...branches.map((b) => b._id));
+        } else if (scope.scopeType === 'PACS') {
+          if (scope.scopeValue) pacsIds.push(scope.scopeValue);
+        }
+
+        const linkedPacs = await PACS.find({ linkedBranch: { $in: branchIds } }).select('_id');
+        pacsIds.push(...linkedPacs.map((p) => p._id));
+
+        const clauses = [];
+        if (branchIds.length) clauses.push({ entityType: 'Branch', entityId: { $in: branchIds } });
+        if (pacsIds.length) clauses.push({ entityType: 'PACS', entityId: { $in: pacsIds } });
+        query = query.and(clauses.length ? [{ $or: clauses }] : [{ _id: null }]);
+      }
     }
 
     const total = await AuditInstance.countDocuments(query.getFilter());
@@ -80,7 +112,27 @@ exports.listInstances = async (req, res) => {
       .skip((page - 1) * limit)
       .limit(Number(limit));
 
-    res.json({ data: instances, total, page: Number(page), limit: Number(limit) });
+    // Populate entity names (PACS / Branch)
+    const pacsIds = instances.filter((i) => i.entityType === 'PACS').map((i) => i.entityId);
+    const branchIds = instances.filter((i) => i.entityType === 'Branch').map((i) => i.entityId);
+    const pacsMap = {};
+    const branchMap = {};
+    if (pacsIds.length) {
+      const pacs = await PACS.find({ _id: { $in: pacsIds } }).select('name');
+      pacs.forEach((p) => { pacsMap[String(p._id)] = p.name; });
+    }
+    if (branchIds.length) {
+      const branches = await Branch.find({ _id: { $in: branchIds } }).select('name');
+      branches.forEach((b) => { branchMap[String(b._id)] = b.name; });
+    }
+    const data = instances.map((i) => ({
+      ...i.toObject(),
+      entityName: i.entityType === 'PACS'
+        ? (pacsMap[String(i.entityId)] || null)
+        : (branchMap[String(i.entityId)] || null),
+    }));
+
+    res.json({ data, total, page: Number(page), limit: Number(limit) });
   } catch (error) {
     console.error('listInstances error:', error);
     res.status(500).json({ error: 'Internal server error.' });

@@ -23,7 +23,7 @@ const CHART_BLUE = '#d92332';
 const CHART_GREEN = '#4a7c59';
 
 const Dashboard = () => {
-  const { user, hasRole } = useAuth();
+  const { user, hasRole, canViewReport } = useAuth();
   const { t, language } = useLanguage();
   const lang = language;
   const navigate = useNavigate();
@@ -32,28 +32,39 @@ const Dashboard = () => {
   const [data, setData] = useState(null);
   const [notifications, setNotifications] = useState([]);
 
+  // Dashboard sources, most-preferred first for each role.
+  const DASHBOARD_SOURCES = [
+    { code: 'hiaDashboard', roles: ['ADMIN', 'SUPER_ADMIN', 'HIA', 'HIA_REVIEWER'], call: () => apiFunctions.reports.hiaDashboard() },
+    { code: 'auditorDashboard', roles: ['AUDITOR'], call: () => apiFunctions.reports.auditorDashboard() },
+    { code: 'branchManagerDashboard', roles: ['BRANCH_MANAGER'], call: () => apiFunctions.reports.branchManagerDashboard() },
+  ];
+
   const fetchDashboard = useCallback(async () => {
     setLoading(true);
     try {
-      let res;
-      if (hasRole('ADMIN') || hasRole('SUPER_ADMIN')) {
-        try { res = await apiFunctions.reports.hiaDashboard(); } catch { res = null; }
-      } else if (hasRole('HIA') || hasRole('HIA_REVIEWER')) {
-        try { res = await apiFunctions.reports.hiaDashboard(); } catch { res = null; }
-      } else if (hasRole('AUDITOR')) {
-        try { res = await apiFunctions.reports.auditorDashboard(); } catch { res = null; }
-      } else if (hasRole('BRANCH_MANAGER')) {
-        try { res = await apiFunctions.reports.branchManagerDashboard(); } catch { res = null; }
-      } else {
-        try { res = await apiFunctions.reports.hiaDashboard(); } catch { res = null; }
+      // Prefer the dashboard matching the user's role, then fall back to any
+      // other dashboard their role is allowed to open (Role Master gate).
+      const preferred = DASHBOARD_SOURCES.filter((s) => s.roles.some((r) => hasRole(r)));
+      const ordered = [...preferred, ...DASHBOARD_SOURCES.filter((s) => !preferred.includes(s))];
+
+      let payload = null;
+      for (const source of ordered) {
+        if (!canViewReport(source.code)) continue;
+        try {
+          const res = await source.call();
+          payload = res?.data?.data || res?.data || null;
+          if (payload) break;
+        } catch {
+          // try the next permitted source
+        }
       }
-      setData(res?.data?.data || res?.data || {});
+      setData(payload || {});
     } catch {
       setData({});
     } finally {
       setLoading(false);
     }
-  }, [hasRole]);
+  }, [hasRole, canViewReport]);
 
   const fetchNotifications = useCallback(async () => {
     try {

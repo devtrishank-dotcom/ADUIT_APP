@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { auth } = require('../middleware/auth');
-const { checkPermission } = require('../middleware/rbac');
+const { checkPermission, checkReportAccess } = require('../middleware/rbac');
 
 const userController = require('../controllers/user.controller');
 const rbacController = require('../controllers/rbac.controller');
@@ -68,7 +68,7 @@ branchRouter.delete('/:id', auth, masterController.deleteBranch);
 masterRouter.use('/branches', branchRouter);
 
 const pacsRouter = express.Router();
-pacsRouter.get('/', auth, masterController.listPacs);
+pacsRouter.get('/', auth, checkPermission('masters', 'read'), masterController.listPacs);
 pacsRouter.post('/', auth, masterController.createPacs);
 pacsRouter.post('/bulk-import', auth, masterController.bulkImportPacs);
 pacsRouter.get('/:id', auth, masterController.getPacs);
@@ -172,7 +172,7 @@ router.use('/planning', planningRouter);
 // ── Audit ──
 const auditRouter = express.Router();
 
-auditRouter.get('/', auth, auditController.listInstances);
+auditRouter.get('/', auth, checkPermission('audit', 'read'), auditController.listInstances);
 auditRouter.post('/', auth, auditController.createInstance);
 auditRouter.get('/:id', auth, auditController.getInstance);
 auditRouter.get('/:id/form', auth, auditController.getForm);
@@ -211,14 +211,15 @@ router.use('/closure', closureRouter);
 // ── Reports ──
 const reportRouter = express.Router();
 
-reportRouter.get('/plan-vs-actual', auth, reportController.planVsActual);
-reportRouter.get('/observation-register', auth, reportController.observationRegister);
-reportRouter.get('/risk-trend', auth, reportController.riskTrend);
-reportRouter.get('/compliance-ageing', auth, reportController.complianceAgeing);
-reportRouter.get('/hia-dashboard', auth, reportController.hiaDashboard);
-reportRouter.get('/auditor-dashboard', auth, reportController.auditorDashboard);
-reportRouter.get('/branch-manager-dashboard', auth, reportController.branchManagerDashboard);
+reportRouter.get('/plan-vs-actual', auth, checkReportAccess('planVsActual'), reportController.planVsActual);
+reportRouter.get('/observation-register', auth, checkReportAccess('observationRegister'), reportController.observationRegister);
+reportRouter.get('/risk-trend', auth, checkReportAccess('riskTrend'), reportController.riskTrend);
+reportRouter.get('/compliance-ageing', auth, checkReportAccess('complianceAgeing'), reportController.complianceAgeing);
+reportRouter.get('/hia-dashboard', auth, checkReportAccess('hiaDashboard'), reportController.hiaDashboard);
+reportRouter.get('/auditor-dashboard', auth, checkReportAccess('auditorDashboard'), reportController.auditorDashboard);
+reportRouter.get('/branch-manager-dashboard', auth, checkReportAccess('branchManagerDashboard'), reportController.branchManagerDashboard);
 
+reportRouter.get('/meta', auth, reportController.reportsMeta);
 router.use('/reports', reportRouter);
 
 // ── Notifications ──

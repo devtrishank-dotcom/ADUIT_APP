@@ -15,6 +15,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import FormRenderer from '../../components/common/FormRenderer';
 import RiskScorePanel from '../../components/common/RiskScorePanel';
+import { buildAuditReportPdf } from '../../utils/auditReportPdf';
 
 const { Title, Text } = Typography;
 
@@ -43,6 +44,8 @@ const AuditDetail = () => {
   const [observations, setObservations] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [workflowHistory, setWorkflowHistory] = useState([]);
+  const [optionLists, setOptionLists] = useState([]);
+  const [exporting, setExporting] = useState(false);
 
   const fetchAuditDetail = useCallback(async () => {
     setLoading(true);
@@ -75,6 +78,11 @@ const AuditDetail = () => {
         respMap[r.fieldCode] = r.value;
       });
       setResponses(respMap);
+
+      try {
+        const olRes = await apiFunctions.optionLists.list();
+        setOptionLists(olRes.data?.data || olRes.data || []);
+      } catch {}
 
       try {
         const riskRes = await apiFunctions.audit.getRiskScore(auditInstanceId);
@@ -149,6 +157,30 @@ const AuditDetail = () => {
     return <ClockCircleOutlined />;
   };
 
+  const handleDownloadPdf = async () => {
+    setExporting(true);
+    try {
+      const doc = await buildAuditReportPdf({
+        instance: auditInstance,
+        template,
+        responses,
+        riskScore,
+        observations,
+        attachments,
+        workflowHistory,
+        optionLists,
+      });
+      const safeName = (auditInstance.entityName || 'audit').replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '');
+      doc.save(`${safeName || 'audit'}-${auditInstanceId}.pdf`);
+      message.success(lang === 'gu' ? 'PDF ડાઉનલોડ થઈ રહ્યું છે' : 'PDF downloading');
+    } catch (err) {
+      console.error('AuditReportPdf error:', err);
+      message.error(lang === 'gu' ? 'PDF બનાવવામાં નિષ્ફળ' : 'Failed to generate PDF');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
@@ -184,6 +216,9 @@ const AuditDetail = () => {
             </Title>
           </Space>
           <Space>
+            <Button type="primary" icon={<FilePdfOutlined />} onClick={handleDownloadPdf} loading={exporting}>
+              {lang === 'gu' ? 'PDF ડાઉનલોડ' : 'Download PDF'}
+            </Button>
             {canEdit && (
               <Button type="primary" icon={<EditOutlined />} onClick={() => navigate(`/auditor/audit/${auditInstanceId}`)}>
                 {lang === 'gu' ? 'સંપાદિત કરો' : 'Edit'}

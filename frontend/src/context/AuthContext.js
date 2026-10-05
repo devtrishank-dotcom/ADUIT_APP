@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { feedbackNotification as notification } from '../services/feedback';
 import apiFunctions from '../services/api';
 
@@ -89,17 +89,42 @@ export const AuthProvider = ({ children }) => {
     return user.roles?.some((role) => accepted.includes(normalize(role?.name || role))) || false;
   }, [user]);
 
+  // Backend returns permissions nested under each role: user.roles[].permissions.
+// Accept both shapes so role edits apply without a re-login.
+  const permissionList = useCallback(() => {
+    if (!user) return [];
+    if (Array.isArray(user.permissions) && user.permissions.length) return user.permissions;
+    return (user.roles || []).flatMap((r) => r?.permissions || []);
+  }, [user]);
+
   const hasPermission = useCallback((module, action) => {
     if (!user) return false;
     if (hasRole('SYSTEM_ADMINISTRATOR')) return true;
-    const perms = user.permissions || [];
     const normalizedAction = { read: 'view', update: 'edit' }[action] || action;
-    return perms.some(p =>
+    return permissionList().some((p) =>
       p.module === module && p.actions?.some((allowed) => (
         allowed === '*' || ({ read: 'view', update: 'edit' }[allowed] || allowed) === normalizedAction
       ))
     );
+  }, [user, hasRole, permissionList]);
+
+  // Report codes the current role is allowed to open. Null = unrestricted.
+  const allowedReports = useMemo(() => {
+    if (!user) return [];
+    if (hasRole('SYSTEM_ADMINISTRATOR')) return null;
+    const lists = (user.roles || []).map((r) => r?.reportAccess || []);
+    if (!lists.length) return [];
+    const unrestricted = lists.some((l) => !l || l.length === 0 || l.includes('*'));
+    if (unrestricted) return null;
+    return [...new Set(lists.flat())];
   }, [user, hasRole]);
+
+  const canViewReport = useCallback((code) => {
+    if (!user) return false;
+    if (hasRole('SYSTEM_ADMINISTRATOR')) return true;
+    if (allowedReports === null) return true;
+    return allowedReports.includes(code);
+  }, [user, hasRole, allowedReports]);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -150,6 +175,8 @@ export const AuthProvider = ({ children }) => {
     refreshAuth,
     hasRole,
     hasPermission,
+    allowedReports,
+    canViewReport,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

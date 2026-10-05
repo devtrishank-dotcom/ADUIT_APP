@@ -102,13 +102,17 @@ exports.reopen = async (req, res) => {
 
 exports.getReadyForClosure = async (req, res) => {
   try {
-    const approvedInstances = await AuditInstance.find({ status: 'Approved' })
+    const instances = await AuditInstance.find({ status: { $in: ['Approved', 'Closed'] } })
       .populate('auditType', 'name code')
       .populate('startedBy', 'name employeeCode');
 
     const ready = [];
 
-    for (const instance of approvedInstances) {
+    for (const instance of instances) {
+      if (instance.status === 'Closed') {
+        ready.push(instance);
+        continue;
+      }
       const observations = await Observation.find({ auditInstance: instance._id });
       const allResolved = observations.every((o) => ['Verified', 'AcceptedRisk'].includes(o.status));
       if (allResolved && observations.length > 0) {

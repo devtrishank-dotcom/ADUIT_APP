@@ -11,11 +11,14 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import apiFunctions from '../../services/api';
 import { feedback as message } from '../../services/feedback';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import FileUpload from '../../components/common/FileUpload';
+import { addPdfHeader, addPdfFooter } from '../../utils/branding';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -156,8 +159,37 @@ const MyObservations = () => {
     return '#b91c2c';
   };
 
-  const handleExport = () => {
-    message.info(lang === 'gu' ? 'નિકાસ સુવિધા ટૂંક સમયમાં ઉપલબ્ધ થશે' : 'Export feature coming soon');
+  const handleExport = async () => {
+    try {
+      const doc = new jsPDF({ orientation: 'landscape' });
+      const startY = await addPdfHeader(doc, {
+        title: 'Observations List',
+        subtitle: `Generated: ${dayjs().format('DD/MM/YYYY HH:mm')} | Total: ${observations.length}`,
+      });
+      const body = observations.map((o) => [
+        o.title || o.observationTitle || '-',
+        o.entityName || o.entity || '-',
+        o.auditType?.name || o.auditType || '-',
+        o.severity || '-',
+        o.status || '-',
+        o.targetDate ? dayjs(o.targetDate).format('DD/MM/YYYY') : '-',
+        o.createdAt ? dayjs(o.createdAt).format('DD/MM/YYYY') : '-',
+      ]);
+      autoTable(doc, {
+        startY,
+        margin: { left: 10, right: 10, bottom: 14 },
+        head: [['Title', 'Entity', 'Audit Type', 'Severity', 'Status', 'Target Date', 'Raised On']],
+        body: body.length ? body : [['No observations']],
+        theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak', valign: 'top' },
+        headStyles: { fillColor: [26, 54, 93], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [245, 247, 250] },
+        didDrawPage: () => addPdfFooter(doc),
+      });
+      doc.save(`observations-${dayjs().format('YYYYMMDD-HHmm')}.pdf`);
+    } catch {
+      message.error(lang === 'gu' ? 'PDF બનાવવામાં નિષ્ફળ' : 'Failed to generate PDF');
+    }
   };
 
   const columns = [

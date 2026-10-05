@@ -13,23 +13,20 @@ import { useLanguage } from '../context/LanguageContext';
 const { Text } = Typography;
 
 const DEMO_USERS = [
-  { employeeCode: 'EMP001', password: 'admin123', label: 'Admin', color: 'geekblue' },
-  { employeeCode: 'EMP002', password: 'hia123', label: 'HIA', color: 'red' },
-  { employeeCode: 'EMP003', password: 'planner123', label: 'Planner', color: 'cyan' },
-  { employeeCode: 'EMP004', password: 'auditor123', label: 'Auditor', color: 'blue' },
-  { employeeCode: 'EMP005', password: 'bm123', label: 'Branch Manager', color: 'purple' },
-  { employeeCode: 'EMP006', password: 'comp123', label: 'Compliance', color: 'green' },
+  { employeeCode: 'ADMIN', password: 'admin123', label: 'Admin', color: 'geekblue' },
+  { employeeCode: 'HIA001', password: 'hia123', label: 'HIA', color: 'red' },
+  { employeeCode: 'PLANNER', password: 'planner123', label: 'Planner', color: 'cyan' },
+  { employeeCode: 'AUDITOR', password: 'auditor123', label: 'Auditor', color: 'blue' },
+  { employeeCode: 'COMP', password: 'comp123', label: 'Compliance', color: 'green' },
+  { employeeCode: 'BM001', password: 'bm123', label: 'Junagadh', color: 'purple' },
+  { employeeCode: 'BM002', password: 'bm123', label: 'Veraval', color: 'purple' },
+  { employeeCode: 'BM003', password: 'bm123', label: 'Keshod', color: 'purple' },
+  { employeeCode: 'BM004', password: 'bm123', label: 'Mangrol', color: 'purple' },
+  { employeeCode: 'BM005', password: 'bm123', label: 'Manavadar', color: 'purple' },
+  { employeeCode: 'BM006', password: 'bm123', label: 'Visavadar', color: 'purple' },
+  { employeeCode: 'BM007', password: 'bm123', label: 'Malia', color: 'purple' },
+  { employeeCode: 'BM008', password: 'bm123', label: 'Vanthali', color: 'purple' },
 ];
-
-const BRANCH_COUNT = 5;
-const BRANCH_DEMO_USERS = Array.from({ length: BRANCH_COUNT }).flatMap((_, idx) => {
-  const seq = String(idx + 1).padStart(3, '0');
-  return [
-    { employeeCode: `AUD${seq}`, password: 'auditor123', label: `AUD-${seq}`, color: 'blue' },
-    { employeeCode: `BM${seq}`, password: 'bm123', label: `BM-${seq}`, color: 'purple' },
-    { employeeCode: `CO${seq}`, password: 'comp123', label: `CO-${seq}`, color: 'green' },
-  ];
-});
 
 const Login = () => {
   const { login, isAuthenticated, loading: authLoading } = useAuth();
@@ -88,13 +85,16 @@ const Login = () => {
         styles={{ body: { padding: 0 } }}
       >
         <Space direction="vertical" size={20} style={{ width: '100%' }}>
-          <div className="login-brand">
-            DCCB<span> AMS</span>
+          <div className="login-brand" style={{ textAlign: 'center' }}>
+            <img src="/JDCC-Logo.png" alt="JJS Bank" style={{ height: 80, marginBottom: 16 }} />
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#1a1a1a' }}>
+              JJS Bank <span style={{ color: '#0066cc' }}>AMS</span>
+            </div>
           </div>
           <div className="login-sub">
             {language === 'gu'
-              ? 'ઓડિટ મેનેજમેન્ટ સિસ્ટમ - શાખા અને PACS ઓડિટનું ડિજિટાઇઝેશન'
-              : 'Audit Management System - Digitizing Branch & PACS Audits'}
+              ? 'ઓડિટ મેનેજમેન્ટ સિસ્ટમ - શાખા અને મંડળી ઓડિટનું ડિજિટાઇઝેશન'
+              : 'Audit Management System - Digitizing Branch & Mandali Audits'}
           </div>
 
           <Divider style={{ margin: 0 }} />
@@ -191,37 +191,7 @@ const Login = () => {
             ))}
           </div>
 
-          <Text type="secondary" style={{ fontSize: 12, textAlign: 'center', display: 'block' }}>
-            {language === 'gu'
-              ? 'શાખા યુઝર્સ: AUD-001.. / BM-001.. / CO-001..'
-              : 'Branch users: AUD-001.. / BM-001.. / CO-001..'}
-          </Text>
 
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 6,
-              justifyContent: 'center',
-              maxHeight: 104,
-              overflowY: 'auto',
-            }}
-          >
-            {BRANCH_DEMO_USERS.map((demoUser) => (
-              <Tooltip
-                key={demoUser.employeeCode}
-                title={`${demoUser.employeeCode} / ${demoUser.password}`}
-              >
-                <span
-                  className="login-demo-chip"
-                  onClick={() => handleDemoLogin(demoUser)}
-                >
-                  <LoginOutlined style={{ marginRight: 5 }} />
-                  {demoUser.label}
-                </span>
-              </Tooltip>
-            ))}
-          </div>
 
           <div
             style={{
@@ -260,7 +230,7 @@ const Login = () => {
             <Text type="secondary" style={{ fontSize: 11 }}>
               {language === 'gu'
                 ? 'ડીસીસીબી - ઓડિટ મેનેજમેન્ટ સિસ્ટમ v2.0'
-                : 'DCCB - Audit Management System v2.0'}
+                : 'JJS Bank - Audit Management System'}
             </Text>
           </div>
         </Space>

@@ -16,10 +16,32 @@ DCCB mate bane de Audit Management System: Branch Audit ane PACS/Mandali Audit n
 ## Tech Stack
 
 - Frontend: React 18 + Ant Design 5 + Recharts
-- Backend: Node.js + Express + MongoDB (Mongoose)
+- Backend (original): Node.js + Express + MongoDB (Mongoose) — kept in `backend/`
+- Backend (.NET): ASP.NET Core 10 Web API + Dapper + MySQL — new, in `AuditApp.Api/`
 - Deployment: Render (render.yaml included)
 
-## Local Run
+## .NET API + MySQL (converted backend)
+
+The Node/MongoDB backend has been ported to ASP.NET Core 10 + Dapper + MySQL while
+keeping the exact same REST contract, so the React frontend runs unchanged (CRA proxy
+points to `http://localhost:5000`).
+
+```powershell
+# 1. Start MySQL (any of these)
+docker compose up -d          # uses docker-compose.yml (root)
+#   or point ConnectionStrings:MySql in AuditApp.Api/appsettings.json at your server
+
+# 2. Run the API (auto-creates the schema + seeds base data on first run)
+cd AuditApp.Api
+dotnet run
+```
+
+- Schema: `AuditApp.Api/Data/Schema.sql` (relational tables + JSON columns for nested arrays)
+- Seed: `AuditApp.Api/Seeds/SeedService.cs` (ported from `backend/seeds/seed-runner.js`)
+- Config: `AuditApp.Api/appsettings.json` (`ConnectionStrings:MySql`, `Jwt`, `Database:AutoCreate`, `Database:AutoSeed`)
+- Swagger UI: `http://localhost:5000/swagger`
+
+## Local Run (original Node backend)
 
 ```powershell
 # Terminal 1 - Backend

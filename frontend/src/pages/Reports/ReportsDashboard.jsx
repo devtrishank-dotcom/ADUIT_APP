@@ -20,6 +20,8 @@ import autoTable from 'jspdf-autotable';
 import apiFunctions from '../../services/api';
 import { feedback as message } from '../../services/feedback';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
+import { addPdfHeader, addPdfFooter } from '../../utils/branding';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -32,6 +34,7 @@ const DEFAULT_REPORT = 'observationRegister';
 const reportCards = [
   {
     key: 'planVsActual',
+    code: 'planVsActual',
     icon: <BarChartOutlined style={{ fontSize: 32 }} />,
     color: '#d92332',
     labelEn: 'Plan vs Actual',
@@ -39,6 +42,7 @@ const reportCards = [
   },
   {
     key: 'observationRegister',
+    code: 'observationRegister',
     icon: <FileTextOutlined style={{ fontSize: 32 }} />,
     color: '#4a7c59',
     labelEn: 'Observation Register',
@@ -46,6 +50,7 @@ const reportCards = [
   },
   {
     key: 'riskTrend',
+    code: 'riskTrend',
     icon: <RiseOutlined style={{ fontSize: 32 }} />,
     color: '#b91c2c',
     labelEn: 'Risk Trend Analysis',
@@ -53,6 +58,7 @@ const reportCards = [
   },
   {
     key: 'complianceAgeing',
+    code: 'complianceAgeing',
     icon: <ClockCircleOutlined style={{ fontSize: 32 }} />,
     color: '#dd6b20',
     labelEn: 'Compliance Ageing',
@@ -60,6 +66,7 @@ const reportCards = [
   },
   {
     key: 'auditorProductivity',
+    code: 'auditorDashboard',
     icon: <UserSwitchOutlined style={{ fontSize: 32 }} />,
     color: '#805ad5',
     labelEn: 'Auditor Productivity',
@@ -67,6 +74,8 @@ const reportCards = [
   },
   {
     key: 'branchAuditHistory',
+    code: 'auditRegister',
+    needsAuditPermission: true,
     icon: <EnvironmentOutlined style={{ fontSize: 32 }} />,
     color: '#c77d2e',
     labelEn: 'Branch-wise Audit History',
@@ -76,8 +85,16 @@ const reportCards = [
 
 const ReportsDashboard = () => {
   const { t, language } = useLanguage();
+  const { canViewReport, hasPermission } = useAuth();
   const lang = language;
   const navigate = useNavigate();
+
+  // Only surface report cards this role is allowed to open (Role Master gate).
+  const visibleReportCards = reportCards.filter((card) => {
+    if (!canViewReport(card.code)) return false;
+    if (card.needsAuditPermission && !hasPermission('audit', 'view')) return false;
+    return true;
+  });
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [selectedReport, setSelectedReport] = useState(null);
@@ -175,8 +192,17 @@ const ReportsDashboard = () => {
           res = { data: [] };
       }
        setData(normalizeReportData(reportKey, res.data?.data || res.data || []));
-    } catch {
-      message.error(lang === 'gu' ? 'રિપોર્ટ લાવવામાં નિષ્ફળ' : 'Failed to fetch report');
+    } catch (err) {
+      if (err.response?.status === 403) {
+        message.warning(
+          lang === 'gu'
+            ? 'આ રિપોર્ટ તમારા રોલમાં મંજૂર નથી. એડમિનને Role Master માં ચાલુ કરાવો.'
+            : 'This report is not enabled for your role. Ask an admin to allow it in Role Master.'
+        );
+        setData(null);
+      } else {
+        message.error(lang === 'gu' ? 'રિપોર્ટ લાવવામાં નિષ્ફળ' : 'Failed to fetch report');
+      }
     } finally {
       setLoading(false);
     }
@@ -184,15 +210,16 @@ const ReportsDashboard = () => {
 
   useEffect(() => {
     const requestedReport = searchParams.get('report') || DEFAULT_REPORT;
-    const validReport = reportCards.some((card) => card.key === requestedReport)
+    const fallback = visibleReportCards[0]?.key || DEFAULT_REPORT;
+    const validReport = visibleReportCards.some((card) => card.key === requestedReport)
       ? requestedReport
-      : DEFAULT_REPORT;
+      : fallback;
     if (searchParams.get('report') !== validReport) {
       setSearchParams({ report: validReport }, { replace: true });
     }
     if (selectedReport !== validReport) setSelectedReport(validReport);
     fetchReport(validReport);
-  }, [searchParams, selectedReport, fetchReport, setSearchParams]);
+  }, [searchParams, selectedReport, fetchReport, setSearchParams, visibleReportCards]);
 
   const handleReportSelect = (reportKey) => {
     setSearchParams({ report: reportKey });
@@ -268,32 +295,28 @@ const ReportsDashboard = () => {
     XLSX.writeFile(workbook, `ams-${selectedReport}-${dayjs().format('YYYYMMDD-HHmm')}.xlsx`);
   };
 
-  const handleExportPdf = () => {
+  const handleExportPdf = async () => {
     const rows = getExportRows().map((row) => Object.fromEntries(
       Object.entries(row).map(([key, value]) => [key, flattenValue(value)])
     ));
     const doc = new jsPDF({ orientation: 'landscape' });
-    const title = reportCards.find((card) => card.key === selectedReport)?.labelEn || 'AMS Report';
-    doc.setFontSize(16);
-    doc.text(title, 14, 16);
-    doc.setFontSize(9);
-    doc.text(`Generated: ${dayjs().format('DD/MM/YYYY HH:mm')}`, 14, 23);
+    const title = visibleReportCards.find((card) => card.key === selectedReport)?.labelEn || 'AMS Report';
+    const startY = await addPdfHeader(doc, {
+      title,
+      subtitle: `Generated: ${dayjs().format('DD/MM/YYYY HH:mm')}`,
+    });
     const columns = rows.length ? Object.keys(rows[0]) : ['Message'];
     const body = rows.length ? rows.map((row) => columns.map((column) => row[column] ?? '')) : [['No data']];
     autoTable(doc, {
-      startY: 30,
-      margin: { left: 10, right: 10 },
+      startY,
+      margin: { left: 10, right: 10, bottom: 14 },
       head: [columns],
       body,
       theme: 'grid',
       styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak', valign: 'top' },
       headStyles: { fillColor: [26, 54, 93], textColor: 255, fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [245, 247, 250] },
-      didDrawPage: ({ pageNumber }) => {
-        doc.setFontSize(8);
-        doc.setTextColor(100);
-        doc.text(`AMS - Audit Management System | Page ${pageNumber}`, 10, doc.internal.pageSize.getHeight() - 8);
-      },
+      didDrawPage: () => addPdfFooter(doc),
     });
     doc.save(`ams-${selectedReport}-${dayjs().format('YYYYMMDD-HHmm')}.pdf`);
   };
@@ -530,7 +553,26 @@ const ReportsDashboard = () => {
         <Title level={3}>{lang === 'gu' ? 'અહેવાલો અને MIS' : 'Reports & MIS'}</Title>
       </div>
 
-      {selectedReport && (
+      {!visibleReportCards.length && (
+        <Card>
+          <Empty
+            description={
+              <Space direction="vertical" align="center">
+                <Text strong>
+                  {lang === 'gu' ? 'તમારા રોલ માટે કોઈ રિપોર્ટ ચાલુ નથી' : 'No reports are enabled for your role'}
+                </Text>
+                <Text type="secondary">
+                  {lang === 'gu'
+                    ? 'એડમિનને Role Master → Report Access માં તમારા રોલ માટે રિપોર્ટ ચાલુ કરાવો.'
+                    : 'Ask an administrator to enable reports for your role under Role Master → Report Access.'}
+                </Text>
+              </Space>
+            }
+          />
+        </Card>
+      )}
+
+      {visibleReportCards.length > 0 && selectedReport && (
         <Card style={{ marginBottom: 16 }}>
           <Row gutter={[16, 16]} align="middle">
             <Col xs={24} sm={6}>

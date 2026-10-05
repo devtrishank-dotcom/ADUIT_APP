@@ -1,10 +1,22 @@
 backend/.env
+backend/.env.*
 backend/node_modules/
 backend/uploads/*
 !backend/uploads/.gitkeep
 frontend/node_modules/
 frontend/build/
 frontend/.env
+
+# local database snapshots (contain user password hashes)
+*.bak
+backend/seeds/*.snapshot.json
 *.log
 .DS_Store
 npm-debug.log*
+
+# .NET backend
+AuditApp.Api/bin/
+AuditApp.Api/obj/
+AuditApp.Api/appsettings.Development.json
+AuditApp.Api/uploads/*
+!AuditApp.Api/uploads/.gitkeep

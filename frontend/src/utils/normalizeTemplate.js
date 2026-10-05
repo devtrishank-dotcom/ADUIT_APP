@@ -16,6 +16,26 @@ export const parseVisibilityRule = (rule) => {
   return { dependOnField, operator, value };
 };
 
+export const evaluateVisibility = (visibilityRule, responses) => {
+  if (!visibilityRule) return true;
+  try {
+    const { dependOnField, operator, value } = visibilityRule;
+    const fieldValue = responses?.[dependOnField];
+    switch (operator) {
+      case 'equals': return String(fieldValue) === String(value);
+      case 'not_equals': return String(fieldValue) !== String(value);
+      case 'contains': return String(fieldValue || '').includes(String(value));
+      case 'not_empty': return fieldValue != null && fieldValue !== '';
+      case 'empty': return fieldValue == null || fieldValue === '';
+      case 'greater_than': return Number(fieldValue) > Number(value);
+      case 'less_than': return Number(fieldValue) < Number(value);
+      default: return true;
+    }
+  } catch {
+    return true;
+  }
+};
+
 export const mapOptionItems = (items = []) =>
   items
     .filter((item) => item.isActive !== false)

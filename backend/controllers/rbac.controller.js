@@ -25,6 +25,13 @@ const rolePayload = (body) => {
 
   if (body.permissions !== undefined) payload.permissions = normalizePermissions(body.permissions);
 
+  // Report codes this role may open. [] means every report is allowed.
+  if (body.reportAccess !== undefined) {
+    payload.reportAccess = Array.isArray(body.reportAccess)
+      ? body.reportAccess.filter((c) => typeof c === 'string' && c.trim())
+      : [];
+  }
+
   if (body.dataScopeRuleId !== undefined) {
     payload.dataScopeRule = body.dataScopeRuleId || null;
   } else if (body.dataScopeRule !== undefined) {

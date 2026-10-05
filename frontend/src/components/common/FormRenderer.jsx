@@ -11,7 +11,7 @@ import dayjs from 'dayjs';
 import GridEditor from './GridEditor';
 import { useLanguage } from '../../context/LanguageContext';
 import apiFunctions from '../../services/api';
-import { normalizeTemplate } from '../../utils/normalizeTemplate';
+import { normalizeTemplate, evaluateVisibility } from '../../utils/normalizeTemplate';
 
 const { Text } = Typography;
 const { TextArea } = Input;
@@ -47,26 +47,6 @@ const getRiskIcon = (score) => {
   if (score >= 70) return <CloseCircleOutlined style={{ color: '#b91c2c' }} />;
   if (score >= 40) return <ExclamationCircleOutlined style={{ color: '#c77d2e' }} />;
   return <CheckCircleOutlined style={{ color: '#4a7c59' }} />;
-};
-
-const evaluateVisibility = (visibilityRule, responses) => {
-  if (!visibilityRule) return true;
-  try {
-    const { dependOnField, operator, value } = visibilityRule;
-    const fieldValue = responses?.[dependOnField];
-    switch (operator) {
-      case 'equals': return String(fieldValue) === String(value);
-      case 'not_equals': return String(fieldValue) !== String(value);
-      case 'contains': return String(fieldValue || '').includes(String(value));
-      case 'not_empty': return fieldValue != null && fieldValue !== '';
-      case 'empty': return fieldValue == null || fieldValue === '';
-      case 'greater_than': return Number(fieldValue) > Number(value);
-      case 'less_than': return Number(fieldValue) < Number(value);
-      default: return true;
-    }
-  } catch {
-    return true;
-  }
 };
 
 let optionListsCache = null;

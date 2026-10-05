@@ -330,12 +330,12 @@ const MastersPanel = () => {
 
   const pacColumns = [
     { title: 'Name', dataIndex: 'name', key: 'name', ellipsis: true },
-    { title: 'Reg No', dataIndex: 'regNo', key: 'regNo', width: 120 },
-    { title: 'Branch', dataIndex: 'linkedBranchName', key: 'linkedBranchName', width: 130 },
-    { title: 'Taluka', dataIndex: 'taluka', key: 'taluka', width: 100 },
-    { title: 'Village', dataIndex: 'village', key: 'village', width: 100 },
+    { title: 'Reg No', dataIndex: 'registrationNumber', key: 'registrationNumber', width: 120, render: (v) => v || '-' },
+    { title: 'Branch', dataIndex: 'linkedBranch', key: 'linkedBranch', width: 150, render: (v) => (v && typeof v === 'object') ? (v.name || v.code || '-') : (v || '-') },
+    { title: 'Taluka', dataIndex: 'taluka', key: 'taluka', width: 100, render: (v) => v || '-' },
+    { title: 'Village', dataIndex: 'village', key: 'village', width: 100, render: (v) => v || '-' },
     { title: 'Category', dataIndex: 'category', key: 'category', width: 100, render: (v) => v ? <Tag>{v}</Tag> : '-' },
-    { title: t('status'), dataIndex: 'status', key: 'status', width: 90, render: statusRender },
+    { title: t('status'), dataIndex: 'status', key: 'status', width: 90, render: (v) => <Tag color={v === 'active' ? 'green' : 'default'}>{v || '-'}</Tag> },
     { title: t('actions'), key: 'actions', width: 120, render: (_, r) => actionRender(() => openPacModal(r), () => handlePacDelete(r.id)) },
   ];
 
@@ -492,16 +492,16 @@ const MastersPanel = () => {
           <Form.Item name="name" label="Name" rules={[{ required: true }]}>
             <Input placeholder="PACS / Mandali name" />
           </Form.Item>
-          <Form.Item name="regNo" label="Registration Number"><Input placeholder="Registration No" /></Form.Item>
-          <Form.Item name="linkedBranchId" label="Linked Branch">
+          <Form.Item name="registrationNumber" label="Registration Number"><Input placeholder="Registration No" /></Form.Item>
+          <Form.Item name="linkedBranch" label="Linked Branch">
             <Select showSearch placeholder="Select branch" optionFilterProp="label"
               options={branches.map((b) => ({ label: `${b.name} (${b.code})`, value: b.id }))} />
           </Form.Item>
           <Form.Item name="taluka" label="Taluka"><Input placeholder="Taluka" /></Form.Item>
           <Form.Item name="village" label="Village"><Input placeholder="Village" /></Form.Item>
           <Form.Item name="category" label="Category"><Input placeholder="Category" /></Form.Item>
-          <Form.Item name="status" label={t('status')} initialValue="ACTIVE">
-            <Select options={[{ label: 'Active', value: 'ACTIVE' }, { label: 'Inactive', value: 'INACTIVE' }]} />
+          <Form.Item name="status" label={t('status')} initialValue="active">
+            <Select options={[{ label: 'Active', value: 'active' }, { label: 'Inactive', value: 'inactive' }]} />
           </Form.Item>
         </Form>
       </Modal>

@@ -17,6 +17,8 @@ const roleSchema = new mongoose.Schema(
         ],
       },
     ],
+    // Report codes this role may open. Empty array = every report is allowed.
+    reportAccess: [{ type: String }],
     dataScopeRule: { type: mongoose.Schema.Types.ObjectId, ref: 'DataScopeRule' },
     isSystemRole: { type: Boolean, default: false },
     dashboardConfig: {

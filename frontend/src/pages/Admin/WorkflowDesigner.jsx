@@ -110,6 +110,29 @@ const WorkflowDesigner = () => {
     );
   };
 
+  const handleAuditTypeChange = (value) => {
+    setSelectedAuditType(value);
+    const at = auditTypes.find((a) => a.id === value || a._id === value);
+    if (at && at.workflowDefId && Array.isArray(at.workflowDefId.stages)) {
+      setStages(at.workflowDefId.stages.map((s, i) => ({
+        id: `stage_${i}`,
+        name: s.name,
+        sequence: s.sequence,
+        actorRole: s.actorRole,
+        allowedActions: s.actionsAllowed || [],
+        slaHours: s.slaHours,
+        workingDaysOnly: s.slaWorkingDays,
+        entryCondition: s.entryCondition || '',
+        isParallelGroup: s.isParallelGroup,
+        fallbackRole: s.fallbackRole,
+      })));
+      setWorkflowName(`${at.name || at.code} Workflow`);
+    } else {
+      setStages([]);
+      setWorkflowName('');
+    }
+  };
+
   const handleSave = async () => {
     if (!selectedAuditType) {
       message.error('Please select an audit type');
@@ -155,7 +178,7 @@ const WorkflowDesigner = () => {
               placeholder="Select audit type"
               style={{ width: 240 }}
               value={selectedAuditType}
-              onChange={setSelectedAuditType}
+              onChange={handleAuditTypeChange}
               optionFilterProp="label"
               options={auditTypes.map((at) => ({ label: at.name || at.code, value: at.id }))}
             />

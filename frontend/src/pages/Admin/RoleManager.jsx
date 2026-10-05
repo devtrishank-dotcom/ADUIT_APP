@@ -27,6 +27,25 @@ const DASHBOARD_WIDGETS = [
   'complianceAgeing', 'recentAudits', 'pendingApprovals', 'notifications',
 ];
 
+// Reports a role can open. Kept in sync with REPORT_CATALOG in backend/middleware/rbac.js
+const REPORTS = [
+  { code: 'planVsActual', label: 'Plan vs Actual' },
+  { code: 'observationRegister', label: 'Observation Register' },
+  { code: 'riskTrend', label: 'Risk Trend' },
+  { code: 'complianceAgeing', label: 'Compliance Ageing' },
+  { code: 'hiaDashboard', label: 'HIA Dashboard' },
+  { code: 'auditorDashboard', label: 'Auditor Dashboard' },
+  { code: 'branchManagerDashboard', label: 'Branch Manager Dashboard' },
+];
+
+const SCOPE_EXPLAINER = {
+  All: 'Can see data of every branch, PACS and user.',
+  Zone: 'Can see data of all branches/PACS inside the selected zone only.',
+  Branch: 'Can see only the branch the user is posted to, plus its linked PACS.',
+  PACS: 'Can see only the specific PACS configured for the role.',
+  Own: 'Can see only records they created or started themselves.',
+};
+
 const getId = (value) => value?._id || value?.id || value;
 
 const normalizeAction = (action) => ({
@@ -92,11 +111,18 @@ const RoleManager = () => {
       });
     });
     if (record) {
+      // An empty reportAccess list means "all reports", so present all as ticked.
+      const stored = record.reportAccess || [];
+      const allReportsAllowed = !stored.length || stored.includes('*');
       form.setFieldsValue({
         name: record.name,
         description: record.description,
         dataScopeRuleId: getId(record.dataScopeRule),
         dashboardWidgets: record.dashboardConfig?.widgets || [],
+        allReports: allReportsAllowed,
+        reportAccess: allReportsAllowed
+          ? REPORTS.map((r) => r.code)
+          : stored.filter((c) => REPORTS.some((r) => r.code === c)),
       });
       if (isAdministratorRole(record)) {
         MODULES.forEach((mod) => ACTIONS.forEach((act) => {
@@ -113,6 +139,10 @@ const RoleManager = () => {
       }
     } else {
       form.resetFields();
+      form.setFieldsValue({
+        allReports: true,
+        reportAccess: REPORTS.map((r) => r.code),
+      });
     }
     setPermMatrix(matrix);
     setDrawerOpen(true);
@@ -168,6 +198,8 @@ const RoleManager = () => {
         description: values.description,
         dataScopeRule: values.dataScopeRule || values.dataScopeRuleId || null,
         dashboardConfig: { widgets: values.dashboardWidgets || [] },
+        // Empty list = every report is visible to this role.
+        reportAccess: values.allReports ? [] : (values.reportAccess || []),
         permissions: permList,
       };
       if (editingRole) {
@@ -385,15 +417,47 @@ const RoleManager = () => {
             </table>
           </div>
 
-          <Divider>Additional Settings</Divider>
+          <Divider>Report Access</Divider>
+          <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
+            Choose which reports this role can open. The data shown inside a report is further
+            limited by the Data Scope Rule below.
+          </Text>
+          <Form.Item name="allReports" valuePropName="checked" style={{ marginBottom: 10 }}>
+            <Checkbox>Allow all reports</Checkbox>
+          </Form.Item>
+          <Form.Item noStyle shouldUpdate={(prev, cur) => prev.allReports !== cur.allReports}>
+            {({ getFieldValue }) => (
+              <Form.Item name="reportAccess" style={{ marginBottom: 12 }}>
+                <Checkbox.Group
+                  disabled={getFieldValue('allReports')}
+                  options={REPORTS.map((r) => ({ label: r.label, value: r.code }))}
+                  style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 6 }}
+                />
+              </Form.Item>
+            )}
+          </Form.Item>
+
+          <Divider>Data Visibility</Divider>
+          <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
+            Controls whose data this role can see across all reports and lists.
+          </Text>
           <Form.Item name="dataScopeRuleId" label="Data Scope Rule">
             <Select
               allowClear
               placeholder="Select data scope rule"
               options={(scopeRules || []).map((sr) => ({
                 label: sr.name || sr.code,
-                 value: getId(sr),
+                value: getId(sr),
+                desc: SCOPE_EXPLAINER[sr.scopeType],
               }))}
+              optionRender={(opt) => (
+                <div>
+                  <div>{opt.data.label}</div>
+                  {opt.data.desc && (
+                    <Text type="secondary" style={{ fontSize: 11 }}>{opt.data.desc}</Text>
+                  )}
+                </div>
+              )}
             />
           </Form.Item>
 

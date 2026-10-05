@@ -2,6 +2,7 @@ const Branch = require('../models/Branch');
 const PACS = require('../models/PACS');
 const FinancialYear = require('../models/FinancialYear');
 const AuditType = require('../models/AuditType');
+const { applyDataScope } = require('../middleware/rbac');
 
 exports.listBranches = async (req, res) => {
   try {
@@ -73,16 +74,19 @@ exports.deleteBranch = async (req, res) => {
 exports.listPacs = async (req, res) => {
   try {
     const { search, category, linkedBranch } = req.query;
-    const query = {};
-    if (category) query.category = category;
-    if (linkedBranch) query.linkedBranch = linkedBranch;
+    let query = PACS.find();
+    if (category) query = query.where('category').equals(category);
+    if (linkedBranch) query = query.where('linkedBranch').equals(linkedBranch);
     if (search) {
-      query.$or = [
+      query = query.or([
         { name: { $regex: search, $options: 'i' } },
         { registrationNumber: { $regex: search, $options: 'i' } },
-      ];
+      ]);
     }
-    const pacs = await PACS.find(query).populate('linkedBranch', 'name code').sort({ name: 1 });
+    if (req.dataScope) {
+      query = applyDataScope(query, req.dataScope, 'linkedBranch');
+    }
+    const pacs = await query.populate('linkedBranch', 'name code').sort({ name: 1 });
     res.json({ data: pacs });
   } catch (error) {
     console.error('listPacs error:', error);

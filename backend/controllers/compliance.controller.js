@@ -1,6 +1,8 @@
 const Observation = require('../models/Observation');
 const ComplianceAction = require('../models/ComplianceAction');
 const AuditInstance = require('../models/AuditInstance');
+const PACS = require('../models/PACS');
+const Branch = require('../models/Branch');
 
 exports.listObservations = async (req, res) => {
   try {
@@ -34,7 +36,29 @@ exports.listObservations = async (req, res) => {
       .skip((page - 1) * limit)
       .limit(Number(limit));
 
-    res.json({ data: observations, total, page: Number(page), limit: Number(limit) });
+    // Populate entity names
+    const pacsIds = observations.filter((o) => o.auditInstance && o.auditInstance.entityType === 'PACS').map((o) => o.auditInstance.entityId);
+    const branchIds = observations.filter((o) => o.auditInstance && o.auditInstance.entityType === 'Branch').map((o) => o.auditInstance.entityId);
+    const pacsMap = {};
+    const branchMap = {};
+    if (pacsIds.length) {
+      const pacs = await PACS.find({ _id: { $in: pacsIds } }).select('name');
+      pacs.forEach((p) => { pacsMap[String(p._id)] = p.name; });
+    }
+    if (branchIds.length) {
+      const branches = await Branch.find({ _id: { $in: branchIds } }).select('name');
+      branches.forEach((b) => { branchMap[String(b._id)] = b.name; });
+    }
+    const data = observations.map((o) => {
+      const obj = o.toObject();
+      const inst = obj.auditInstance;
+      obj.entityName = inst
+        ? (inst.entityType === 'PACS' ? (pacsMap[String(inst.entityId)] || null) : (branchMap[String(inst.entityId)] || null))
+        : null;
+      return obj;
+    });
+
+    res.json({ data, total, page: Number(page), limit: Number(limit) });
   } catch (error) {
     console.error('listObservations error:', error);
     res.status(500).json({ error: 'Internal server error.' });

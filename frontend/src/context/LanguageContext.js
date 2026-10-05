@@ -19,6 +19,7 @@ const translations = {
     users: 'Users',
     planning: 'Planning',
     myAudits: 'My Audits',
+    myMandali: 'My Mandali',
     hiaReview: 'HIA Review',
     compliance: 'Compliance',
     closure: 'Closure',
@@ -121,6 +122,7 @@ const translations = {
     users: 'વપરાશકર્તાઓ',
     planning: 'આયોજન',
     myAudits: 'મારા ઓડિટ',
+    myMandali: 'મારી મંડળી',
     hiaReview: 'HIA સમીક્ષા',
     compliance: 'અનુપાલન',
     closure: 'સમાપ્તિ',
@@ -217,7 +219,7 @@ const translations = {
 
 export const LanguageProvider = ({ children }) => {
   const [language, setLanguage] = useState(() => {
-    return localStorage.getItem('ams_language') || 'en';
+    return localStorage.getItem('ams_language') || 'gu';
   });
 
   const toggleLanguage = useCallback(() => {

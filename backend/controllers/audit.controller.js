@@ -12,6 +12,7 @@ const WorkflowTransitionLog = require('../models/WorkflowTransitionLog');
 const WorkflowDefinition = require('../models/WorkflowDefinition');
 const RiskConfig = require('../models/RiskConfig');
 const Attachment = require('../models/Attachment');
+const { scoreTemplate } = require('../utils/fieldScoring');
 // Data-scope filtering is handled inline in listInstances (it has to resolve
 // Branch/Zone rules down to entity ids), so applyDataScope is not needed here.
 const PACS = require('../models/PACS');
@@ -376,26 +377,13 @@ exports.getRiskScore = async (req, res) => {
     const responses = await AuditResponse.find({ auditInstance: instance._id });
     const riskConfigs = await RiskConfig.find({ auditType: instance.auditType });
 
-    const sectionScores = [];
-    let overallScore = 0;
+    // Per-field compliance drives both the coloured form and the section
+    // averages. Grid cells arrive as separate responses with a row index, so
+    // only whole-field responses are scored here.
+    const { overallScore, band: defaultBand, fieldScores, fieldBands, sectionScores } =
+      scoreTemplate(instance.template, responses);
 
-    if (instance.template && instance.template.sections) {
-      for (const section of instance.template.sections) {
-        let sectionScore = 0;
-        for (const field of section.fields) {
-          const response = responses.find(
-            (r) => r.sectionCode === section.code && r.fieldCode === field.code
-          );
-          if (response && response.riskPointsApplied) {
-            sectionScore += response.riskPointsApplied;
-          }
-        }
-        sectionScores.push({ section: section.code, score: sectionScore, band: '' });
-        overallScore += sectionScore;
-      }
-    }
-
-    let band = 'Low';
+    let band = defaultBand;
     for (const config of riskConfigs) {
       if (config.bandDefinitions) {
         for (const bd of config.bandDefinitions) {
@@ -415,7 +403,7 @@ exports.getRiskScore = async (req, res) => {
     instance.overallRiskBand = band;
     await instance.save();
 
-    res.json({ data: { overallScore, band, sectionScores } });
+    res.json({ data: { overallScore, band, sectionScores, fieldScores, fieldBands } });
   } catch (error) {
     console.error('getRiskScore error:', error);
     res.status(500).json({ error: 'Internal server error.' });

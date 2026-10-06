@@ -17,8 +17,9 @@
     "seed:master-data": "node seeds/demo-master-data.seed.js",
     "seed:audit-instances": "node seeds/demo-audit-instances.seed.js",
     "seed:auditor-work": "node seeds/demo-auditor-work.seed.js",
+    "seed:form-responses": "node seeds/demo-form-responses.seed.js",
     "seed:report-access": "node seeds/set-report-access.seed.js",
-    "seed:demo-full": "npm run seed && npm run seed:master-data && npm run seed:role-users && npm run seed:audit-instances && npm run seed:auditor-work && npm run seed:report-access"
+    "seed:demo-full": "npm run seed && npm run seed:master-data && npm run seed:role-users && npm run seed:audit-instances && npm run seed:auditor-work && npm run seed:form-responses && npm run seed:report-access"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

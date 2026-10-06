@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   Breadcrumb, Row, Col, Card, Select, DatePicker, Table, Button,
   Typography, Space, Spin, Empty, Statistic, Tag,
@@ -90,11 +90,19 @@ const ReportsDashboard = () => {
   const navigate = useNavigate();
 
   // Only surface report cards this role is allowed to open (Role Master gate).
-  const visibleReportCards = reportCards.filter((card) => {
-    if (!canViewReport(card.code)) return false;
-    if (card.needsAuditPermission && !hasPermission('audit', 'view')) return false;
-    return true;
-  });
+  // Memoised because the loading effect below depends on this list: a fresh
+  // array every render would restart the fetch on every render and the spinner
+  // would never clear.
+  const visibleReportCards = useMemo(
+    () =>
+      reportCards.filter((card) => {
+        if (!canViewReport(card.code)) return false;
+        if (card.needsAuditPermission && !hasPermission('audit', 'view')) return false;
+        return true;
+      }),
+    [canViewReport, hasPermission]
+  );
+  const visibleReportKeys = visibleReportCards.map((card) => card.key).join('|');
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [selectedReport, setSelectedReport] = useState(null);
@@ -209,17 +217,17 @@ const ReportsDashboard = () => {
   }, [filters, lang]);
 
   useEffect(() => {
+    const allowedKeys = visibleReportKeys ? visibleReportKeys.split('|') : [DEFAULT_REPORT];
     const requestedReport = searchParams.get('report') || DEFAULT_REPORT;
-    const fallback = visibleReportCards[0]?.key || DEFAULT_REPORT;
-    const validReport = visibleReportCards.some((card) => card.key === requestedReport)
+    const validReport = allowedKeys.includes(requestedReport)
       ? requestedReport
-      : fallback;
+      : allowedKeys[0];
     if (searchParams.get('report') !== validReport) {
       setSearchParams({ report: validReport }, { replace: true });
     }
     if (selectedReport !== validReport) setSelectedReport(validReport);
     fetchReport(validReport);
-  }, [searchParams, selectedReport, fetchReport, setSearchParams, visibleReportCards]);
+  }, [searchParams, selectedReport, fetchReport, setSearchParams, visibleReportKeys]);
 
   const handleReportSelect = (reportKey) => {
     setSearchParams({ report: reportKey });

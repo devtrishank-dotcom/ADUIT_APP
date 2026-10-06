@@ -35,18 +35,52 @@ const FIELD_TYPE_COMPONENTS = {
   SIGNATURE: 'signature',
 };
 
+const BAND_COLORS = {
+  Green: '#4a7c59',
+  Yellow: '#c77d2e',
+  Red: '#b91c2c',
+};
+
+const BAND_BACKGROUNDS = {
+  Green: 'rgba(74, 124, 89, 0.06)',
+  Yellow: 'rgba(199, 125, 46, 0.08)',
+  Red: 'rgba(185, 28, 44, 0.07)',
+};
+
+const getRiskBand = (score) => {
+  if (score == null) return null;
+  if (score >= 70) return 'Red';
+  if (score >= 40) return 'Yellow';
+  return 'Green';
+};
+
 const getRiskColor = (score) => {
-  if (score == null) return undefined;
-  if (score >= 70) return 'red';
-  if (score >= 40) return 'gold';
-  return 'green';
+  const band = getRiskBand(score);
+  return band ? band.toLowerCase() : undefined;
 };
 
 const getRiskIcon = (score) => {
-  if (score == null) return undefined;
-  if (score >= 70) return <CloseCircleOutlined style={{ color: '#b91c2c' }} />;
-  if (score >= 40) return <ExclamationCircleOutlined style={{ color: '#c77d2e' }} />;
-  return <CheckCircleOutlined style={{ color: '#4a7c59' }} />;
+  const band = getRiskBand(score);
+  if (!band) return undefined;
+  if (band === 'Red') return <CloseCircleOutlined style={{ color: BAND_COLORS.Red }} />;
+  if (band === 'Yellow') return <ExclamationCircleOutlined style={{ color: BAND_COLORS.Yellow }} />;
+  return <CheckCircleOutlined style={{ color: BAND_COLORS.Green }} />;
+};
+
+// Tint the whole row so a failing question stands out while scrolling, rather
+// than only in the small tag next to its label. Unscored fields stay neutral so
+// a free-text note is never mistaken for a pass or a failure.
+const bandRowStyle = (field, riskScore) => {
+  const band = riskScore?.fieldBands?.[field.code];
+  if (!band || !BAND_COLORS[band]) return undefined;
+  return {
+    background: BAND_BACKGROUNDS[band],
+    borderLeft: `3px solid ${BAND_COLORS[band]}`,
+    borderRadius: '0 4px 4px 0',
+    paddingLeft: 10,
+    marginLeft: -10,
+    marginBottom: 4,
+  };
 };
 
 let optionListsCache = null;
@@ -398,19 +432,50 @@ const FormRenderer = ({
     );
   };
 
+  const sectionBandCounts = (section, riskScore) => {
+    const counts = { Red: 0, Yellow: 0, Green: 0 };
+    (section.fields || []).forEach((field) => {
+      const band = riskScore?.fieldBands?.[field.code];
+      if (band && counts[band] != null) counts[band] += 1;
+    });
+    return counts;
+  };
+
   const collapseItems = sections.map((section) => {
     const fields = (section.fields || []).sort((a, b) => (a.order || 0) - (b.order || 0));
+    const counts = sectionBandCounts(section, riskScore);
+    const dot = (band) =>
+      counts[band] ? (
+        <Tooltip key={band} title={`${counts[band]} ${band.toLowerCase()}`}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: BAND_COLORS[band] }} />
+            <Text style={{ fontSize: 12, color: BAND_COLORS[band] }}>{counts[band]}</Text>
+          </span>
+        </Tooltip>
+      ) : null;
+
     return {
       key: section.code || section.id,
       label: (
         <Space>
           <Text strong>{getSectionTitle(section)}</Text>
           {renderSectionRisk(section.code)}
+          {riskScore && (
+            <Space size={10}>
+              {dot('Red')}
+              {dot('Yellow')}
+              {dot('Green')}
+            </Space>
+          )}
         </Space>
       ),
       children: (
         <div style={{ padding: '0 8px' }}>
-          {fields.map((field) => renderField(field, section.code))}
+          {fields.map((field) => (
+            <div key={field.code} style={bandRowStyle(field, riskScore)}>
+              {renderField(field, section.code)}
+            </div>
+          ))}
         </div>
       ),
     };
